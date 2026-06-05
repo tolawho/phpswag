@@ -17,13 +17,15 @@ class Core
     private Parser $parser;
     private DocBlockCollector $docCollector;
     private Generator $generator;
+    private SchemaRegistry $schemaRegistry;
 
     public function __construct()
     {
         $this->scanner = new Scanner();
         $this->parser = new Parser();
         $this->docCollector = new DocBlockCollector();
-        $this->generator = new Generator();
+        $this->schemaRegistry = new SchemaRegistry();
+        $this->generator = new Generator($this->schemaRegistry);
     }
 
     public function generate(array $paths): string
@@ -62,6 +64,7 @@ class Core
     private function processStatement(Node $stmt, NameResolver $nameResolver): void
     {
         if ($stmt instanceof Class_) {
+            $typeResolver = new TypeResolver($this->schemaRegistry, $nameResolver);
             $docComment = $stmt->getDocComment()?->getText() ?? '';
             $tags = $this->docCollector->collectTags($docComment);
 
@@ -71,13 +74,11 @@ class Core
             foreach ($tags as $tag) {
                 if ($tag['name'] === '@property') {
                     $isSchema = true;
-                    $isNullable = str_contains($tag['type'], '|null') || str_starts_with($tag['type'], '?');
-                    $cleanType = str_replace(['|null', '?'], '', $tag['type']);
+                    $propertySchema = $typeResolver->resolve($tag['type']);
 
                     $properties[] = new PropertyDefinition(
                         $tag['propertyName'],
-                        $cleanType,
-                        $isNullable,
+                        $propertySchema,
                         $tag['description']
                     );
                 }
@@ -90,13 +91,11 @@ class Core
                     $propTags = $this->docCollector->collectTags($propDoc);
                     foreach ($propTags as $pTag) {
                         if ($pTag['name'] === '@var') {
-                            $isNullable = str_contains($pTag['type'], '|null') || str_starts_with($pTag['type'], '?');
-                            $cleanType = str_replace(['|null', '?'], '', $pTag['type']);
+                            $propertySchema = $typeResolver->resolve($pTag['type']);
 
                             $properties[] = new PropertyDefinition(
                                 $member->props[0]->name->toString(),
-                                $cleanType,
-                                $isNullable,
+                                $propertySchema,
                                 $pTag['description']
                             );
                         }
@@ -109,18 +108,35 @@ class Core
 
                     $routeTag = null;
                     $summary = null;
+                    $description = null;
+                    $tagsList = [];
                     $responses = [];
 
                     foreach ($methodTags as $mTag) {
-                        if ($mTag['name'] === '@route') {
-                            $routeTag = $mTag['value'];
-                        } elseif ($mTag['name'] === '@summary') {
-                            $summary = $mTag['value'];
-                        } elseif ($mTag['name'] === '@response') {
-                            $parts = preg_split('/\s+/', trim($mTag['value']), 2);
-                            if (count($parts) === 2) {
-                                $responses[$parts[0]] = $nameResolver->resolve($parts[1]);
-                            }
+                        switch ($mTag['name']) {
+                            case '@route':
+                                $routeTag = $mTag['value'];
+                                break;
+                            case '@summary':
+                                $summary = $mTag['value'];
+                                break;
+                            case '@description':
+                                $description = $mTag['value'];
+                                break;
+                            case '@tag':
+                                $tagsList[] = $mTag['value'];
+                                break;
+                            case '@response':
+                                $parts = preg_split('/\s+/', trim($mTag['value']), 2);
+                                if (count($parts) >= 2) {
+                                    // Parse response type using DocBlockParser/TypeResolver
+                                    $responseDoc = '/** @var ' . $parts[1] . ' */';
+                                    $responseTags = $this->docCollector->collectTags($responseDoc);
+                                    if (isset($responseTags[0]['type'])) {
+                                        $responses[$parts[0]] = $typeResolver->resolve($responseTags[0]['type']);
+                                    }
+                                }
+                                break;
                         }
                     }
 
@@ -131,6 +147,8 @@ class Core
                                 method: $routeParts[0],
                                 path: $routeParts[1],
                                 summary: $summary,
+                                description: $description,
+                                tags: $tagsList,
                                 responses: $responses
                             ));
                         }
@@ -141,7 +159,7 @@ class Core
             if ($isSchema) {
                 $className = $stmt->name->toString();
                 $fqcn = ($nameResolver->getCurrentNamespace() ? $nameResolver->getCurrentNamespace() . '\\' : '') . $className;
-                $this->generator->addSchema(new SchemaDefinition($fqcn, $properties));
+                $this->schemaRegistry->register(new SchemaDefinition($fqcn, $properties));
             }
         }
     }

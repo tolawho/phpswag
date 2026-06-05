@@ -9,16 +9,16 @@ use PhpSwag\IR\SchemaDefinition;
 class Generator
 {
     private array $routes = [];
-    private array $schemas = [];
+    private SchemaRegistry $schemaRegistry;
+
+    public function __construct(SchemaRegistry $schemaRegistry)
+    {
+        $this->schemaRegistry = $schemaRegistry;
+    }
 
     public function addRoute(RouteDefinition $route): void
     {
         $this->routes[] = $route;
-    }
-
-    public function addSchema(SchemaDefinition $schema): void
-    {
-        $this->schemas[$schema->name] = $schema;
     }
 
     public function generateYaml(): string
@@ -43,61 +43,52 @@ class Generator
                 $spec['paths'][$path] = [];
             }
 
-            $spec['paths'][$path][$method] = [
+            $routeSpec = [
                 'summary' => $route->summary,
                 'description' => $route->description,
-                'tags' => $route->tags,
                 'responses' => []
             ];
 
+            if (!empty($route->tags)) {
+                $routeSpec['tags'] = $route->tags;
+            }
+
             if (!empty($route->responses)) {
-                foreach ($route->responses as $code => $ref) {
-                    $spec['paths'][$path][$method]['responses'][$code] = [
+                foreach ($route->responses as $code => $schema) {
+                    $routeSpec['responses'][$code] = [
                         'description' => 'OK',
                         'content' => [
                             'application/json' => [
-                                'schema' => [
-                                    '$ref' => '#/components/schemas/' . str_replace('\\', '_', $ref)
-                                ]
+                                'schema' => $schema
                             ]
                         ]
                     ];
                 }
             } else {
-                $spec['paths'][$path][$method]['responses']['200'] = [
+                $routeSpec['responses']['200'] = [
                     'description' => 'OK'
                 ];
             }
+
+            $spec['paths'][$path][$method] = $routeSpec;
         }
 
-        foreach ($this->schemas as $schema) {
+        foreach ($this->schemaRegistry->getAll() as $schema) {
             $properties = [];
             foreach ($schema->properties as $prop) {
-                $properties[$prop->name] = [
-                    'type' => $this->mapType($prop->type),
-                    'description' => $prop->description
-                ];
-                if ($prop->isNullable) {
-                    $properties[$prop->name]['nullable'] = true;
+                $propSchema = $prop->schema;
+                if ($prop->description) {
+                    $propSchema['description'] = $prop->description;
                 }
+                $properties[$prop->name] = $propSchema;
             }
 
-            $spec['components']['schemas'][str_replace('\\', '_', $schema->name)] = [
+            $spec['components']['schemas'][$this->schemaRegistry->getSchemaId($schema->name)] = [
                 'type' => 'object',
                 'properties' => $properties
             ];
         }
 
         return Yaml::dump($spec, 10, 2);
-    }
-
-    private function mapType(string $type): string
-    {
-        return match ($type) {
-            'int', 'integer' => 'integer',
-            'float', 'double' => 'number',
-            'bool', 'boolean' => 'boolean',
-            default => 'string',
-        };
     }
 }
