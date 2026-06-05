@@ -26,3 +26,15 @@ file_put_contents('swagger.yaml', $yaml);
 - `@response [CODE] [CLASS]`
 - `@property [TYPE] $[NAME] [DESCRIPTION]`
 - `@var [TYPE]`
+
+## Testing
+
+To run the unit tests:
+```bash
+./vendor/bin/phpunit
+```
+
+To run the example generator:
+```bash
+php examples/generate.php
+```
