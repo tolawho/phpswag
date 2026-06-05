@@ -10,11 +10,11 @@
 - **Tiêu chí chấp nhận (Acceptance Criteria):**
   - Có khả năng quét thư mục và tìm kiếm file .php.
   - Phân tích được cấu trúc AST và giải quyết được Namespace/Use statements.
-  - Nhận diện và trích xuất được các tag cơ bản: `@route`, `@summary`, `@property`.
+  - Nhận diện và trích xuất được các tag cơ bản: @route, @summary, @property.
   - Xuất ra cấu trúc dữ liệu trung gian (IR).
 
 ### [Epic 2] Nâng cấp Hệ thống Type System (Pro)
-- **Trạng thái:** To Do
+- **Trạng thái:** In Progress
 - **Chủ sở hữu:** Fullstack Developer (User)
 - **Tóm tắt:** Mở rộng khả năng phân tích kiểu dữ liệu phức tạp bao gồm Generics, Union types và xử lý thừa kế.
 - **Giả thuyết Lợi ích (Benefit Hypothesis):** Cho phép thư viện hỗ trợ các dự án PHP hiện đại sử dụng cấu trúc dữ liệu phức tạp (như Collection<T>, DTO kế thừa), tăng tính chính xác và độ phủ của tài liệu API được sinh ra.
@@ -49,47 +49,50 @@
   - *AC:* Chuyển đổi PHPDoc thô thành các Object thuộc tính tương ứng.
 
 ### Features cho [Epic 2] Type System Pro
-- **[F2.1] Advanced Type Resolver:** Hỗ trợ các kiểu dữ liệu phức tạp của PHP hiện đại.
+- [x] **[F2.1] Advanced Type Resolver:** Hỗ trợ các kiểu dữ liệu phức tạp của PHP hiện đại.
   - *AC:* Xử lý được union types (A|B), nullable (?A), và các kiểu nguyên thủy.
-- **[F2.2] Generics Support:** Phân tích cú pháp template cho các kiểu dữ liệu generic.
+- [ ] **[F2.2] Generics Support:** Phân tích cú pháp template cho các kiểu dữ liệu generic.
   - *AC:* Hiểu được `Collection<User>` hoặc `ApiResponse<T>`.
-- **[F2.3] Inheritance & Trait Merger:** Gộp các thuộc tính từ các class cha và traits.
+- [ ] **[F2.3] Inheritance & Trait Merger:** Gộp các thuộc tính từ các class cha và traits.
   - *AC:* Schema của class con phải bao gồm đầy đủ thuộc tính từ cây kế thừa.
-- **[F2.4] Schema Registry:** Quản lý tập trung các định nghĩa Model để tránh trùng lặp và xử lý tham chiếu vòng.
+- [x] **[F2.4] Schema Registry:** Quản lý tập trung các định nghĩa Model để tránh trùng lặp và xử lý tham chiếu vòng.
   - *AC:* Không bị lỗi vòng lặp vô tận khi Class A chứa Class B và ngược lại.
 
 ### Features cho [Epic 3] Integration & CLI
-- **[F3.1] CLI Command Interface:** Cung cấp giao diện dòng lệnh cho người dùng.
+- [ ] **[F3.1] CLI Command Interface:** Cung cấp giao diện dòng lệnh cho người dùng.
   - *AC:* Chạy được lệnh `php-swag generate --path=src`.
-- **[F3.2] OpenAPI Spec Generator:** Chuyển đổi dữ liệu IR thành file chuẩn OpenAPI.
+- [ ] **[F3.2] OpenAPI Spec Generator:** Chuyển đổi dữ liệu IR thành file chuẩn OpenAPI.
   - *AC:* Xuất ra file `swagger.yaml` hoặc `swagger.json` hợp lệ (v3.0/3.1).
-- **[F3.3] Performance Caching:** Lưu trữ kết quả phân tích để tăng tốc cho các lần chạy sau.
+- [ ] **[F3.3] Performance Caching:** Lưu trữ kết quả phân tích để tăng tốc cho các lần chạy sau.
   - *AC:* Tốc độ generate lần 2 phải nhanh hơn ít nhất 50% so với lần đầu.
-- **[F3.4] README & Documentation:** Hướng dẫn cộng đồng cách sử dụng và đóng góp.
+- [ ] **[F3.4] README & Documentation:** Hướng dẫn cộng đồng cách sử dụng và đóng góp.
   - *AC:* Có file README.md chi tiết với ví dụ minh họa rõ ràng.
 
 ## 3. Team Backlog (User Stories - Examples for PI-1)
 
 ### Stories cho [F1.3] Namespace Resolver
-- **[S1.3.1] Parse Use Statements:**
+- [x] **[S1.3.1] Parse Use Statements:**
   - *Câu chuyện:* Là một hệ thống phân tích, tôi muốn đọc và lưu trữ các alias trong phần `use` của file PHP, để tôi biết chính xác tên class được tham chiếu trong code.
   - *AC:* Xử lý được các trường hợp: `use App\User;`, `use App\Resource as Res;`, `use Group\{ClassA, ClassB};`.
-- **[S1.3.2] Contextual Class Resolution:**
+- [x] **[S1.3.2] Contextual Class Resolution:**
   - *Câu chuyện:* Là một hệ thống phân tích, tôi muốn tìm được FQCN của một class dựa trên context hiện tại (Namespace + Use statements), để tạo tham chiếu chính xác trong OpenAPI.
   - *AC:* Trả về `App\Resources\UserResource` khi gặp code sử dụng `UserResource` trong namespace `App\Controllers` có `use App\Resources\UserResource`.
 
 ### Stories cho [F1.4] Basic DocBlock Collector
-- **[S1.4.1] Extract @route tag:**
+- [x] **[S1.4.1] Extract @route tag:**
   - *Câu chuyện:* Là một lập trình viên, tôi muốn dùng tag `@route` để định nghĩa endpoint, để tôi không phải viết cấu trúc path phức tạp trong file cấu hình.
   - *AC:* Bóc tách được `METHOD` (GET, POST, ...) và `PATH` từ chuỗi `@route GET /users`.
-- **[S1.4.2] Extract @property tag:**
+- [x] **[S1.4.2] Extract @property tag:**
   - *Câu chuyện:* Là một lập trình viên, tôi muốn dùng tag `@property` trong Model, để mô tả cấu trúc JSON của API.
   - *AC:* Trích xuất được kiểu dữ liệu (`string`, `int`), tên biến (`$name`) và mô tả kèm theo.
 
 ### Stories cho [F2.1] Advanced Type Resolver
-- **[S2.1.1] Handle Nullable Types:**
+- [x] **[S2.1.1] Handle Nullable Types:**
   - *Câu chuyện:* Là một lập trình viên, tôi muốn hỗ trợ kiểu nullable, để tài liệu API phản ánh đúng tính chất dữ liệu (có thể null).
   - *AC:* Nhận diện `?string`, `string|null` và ánh xạ sang `nullable: true` trong OpenAPI.
+- [x] **[S2.1.2] Array Type Support:**
+  - *Câu chuyện:* Là một lập trình viên, tôi muốn hỗ trợ kiểu mảng (User[] hoặc array<User>), để mô tả chính xác các collection trong API.
+  - *AC:* Ánh xạ chính xác sang `type: array` với `items` tương ứng trong OpenAPI.
 
 
 ## 4. Ưu tiên hóa bằng WSJF (Weighted Shortest Job First)
@@ -99,17 +102,16 @@ Thang điểm Fibonacci: 1, 2, 3, 5, 8, 13, 20.
 
 | Feature | Business Value | Time Criticality | RR \| OE | Cost of Delay (CoD) | Job Size | **WSJF** |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [F1.2] AST Parser | 13 | 5 | 20 | 38 | 8 | **4.75** |
-| [F1.3] Namespace Resolver | 8 | 3 | 13 | 24 | 5 | **4.8** |
-| [F1.1] File Scanner | 5 | 2 | 5 | 12 | 3 | **4.0** |
-| [F1.4] Basic DocBlock | 13 | 8 | 8 | 29 | 5 | **5.8** |
-| [F2.1] Adv. Type Resolver | 8 | 3 | 8 | 19 | 5 | **3.8** |
-| [F2.4] Schema Registry | 5 | 2 | 13 | 20 | 3 | **6.67** |
+| [F1.2] AST Parser | 13 | 5 | 20 | 38 | 8 | **DONE** |
+| [F1.3] Namespace Resolver | 8 | 3 | 13 | 24 | 5 | **DONE** |
+| [F1.1] File Scanner | 5 | 2 | 5 | 12 | 3 | **DONE** |
+| [F1.4] Basic DocBlock | 13 | 8 | 8 | 29 | 5 | **DONE** |
+| [F2.1] Adv. Type Resolver | 8 | 3 | 8 | 19 | 5 | **DONE** |
+| [F2.4] Schema Registry | 5 | 2 | 13 | 20 | 3 | **DONE** |
 
 **Phân tích:**
-- **[F2.4] Schema Registry** có WSJF cao nhất vì nó giải quyết rủi ro kỹ thuật lớn (tham chiếu vòng) và có kích thước nhỏ. Cần làm sớm để làm nền móng.
-- **[F1.4] Basic DocBlock** có WSJF cao vì nó mang lại giá trị trực tiếp cho người dùng (thấy được kết quả).
-- [x] **[F1.2] và [F1.3]** là nền tảng bắt buộc.
+- **[F2.4] Schema Registry** đã hoàn thành, giải quyết rủi ro kỹ thuật lớn về tham chiếu vòng.
+- **[F2.1] Advanced Type Resolver** đã hoàn thành, hỗ trợ nullable và array types.
 
 
 ## 5. Transformation Roadmap & PI Objectives
