@@ -6,8 +6,7 @@ class PropertyDefinition
 {
     public function __construct(
         public string $name,
-        public string $type,
-        public bool $isNullable = false,
+        public array $schema,
         public ?string $description = null
     ) {}
 }

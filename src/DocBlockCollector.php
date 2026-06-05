@@ -33,14 +33,14 @@ class DocBlockCollector
             if ($value instanceof PropertyTagValueNode) {
                 $tags[] = [
                     'name' => $tagName,
-                    'type' => (string)$value->type,
+                    'type' => $value->type,
                     'propertyName' => ltrim($value->propertyName, '$'),
                     'description' => $value->description
                 ];
             } elseif ($value instanceof VarTagValueNode) {
                  $tags[] = [
                     'name' => $tagName,
-                    'type' => (string)$value->type,
+                    'type' => $value->type,
                     'propertyName' => $value->variableName ? ltrim($value->variableName, '$') : null,
                     'description' => $value->description
                 ];

@@ -4,6 +4,7 @@ namespace PhpSwag\Tests;
 
 use PHPUnit\Framework\TestCase;
 use PhpSwag\Generator;
+use PhpSwag\SchemaRegistry;
 use PhpSwag\IR\RouteDefinition;
 use PhpSwag\IR\SchemaDefinition;
 use PhpSwag\IR\PropertyDefinition;
@@ -13,24 +14,25 @@ class GeneratorTest extends TestCase
 {
     public function testGenerateBasicOpenApi()
     {
-        $generator = new Generator();
+        $registry = new SchemaRegistry();
+        $generator = new Generator($registry);
 
         $route = new RouteDefinition(
             method: 'GET',
             path: '/users',
             summary: 'List users',
-            responses: ['200' => 'User']
+            responses: ['200' => ['$ref' => '#/components/schemas/User']]
         );
         $generator->addRoute($route);
 
         $schema = new SchemaDefinition(
             name: 'User',
             properties: [
-                new PropertyDefinition('id', 'int', description: 'User ID'),
-                new PropertyDefinition('name', 'string', description: 'User name'),
+                new PropertyDefinition('id', ['type' => 'integer'], description: 'User ID'),
+                new PropertyDefinition('name', ['type' => 'string'], description: 'User name'),
             ]
         );
-        $generator->addSchema($schema);
+        $registry->register($schema);
 
         $yaml = $generator->generateYaml();
         $spec = Yaml::parse($yaml);
