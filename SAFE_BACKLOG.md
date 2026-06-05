@@ -3,7 +3,7 @@
 ## 1. Portfolio Backlog (Epics)
 
 ### [Epic 1] Xây dựng Core Engine cho PHP Swagger Generator
-- **Trạng thái:** To Do
+- **Trạng thái:** Done
 - **Chủ sở hữu:** Fullstack Developer (User)
 - **Tóm tắt:** Xây dựng bộ khung cơ bản có khả năng quét mã nguồn PHP và trích xuất các thông tin route cơ bản thông qua AST.
 - **Giả thuyết Lợi ích (Benefit Hypothesis):** Cung cấp một công cụ mã nguồn mở giúp lập trình viên PHP tự động hóa việc tạo tài liệu Swagger từ mã nguồn mà không cần cấu hình thủ công phức tạp, từ đó giảm sai sót và tiết kiệm thời gian bảo trì tài liệu.
@@ -39,13 +39,13 @@
 ## 2. Program Backlog (Features)
 
 ### Features cho [Epic 1] Core Engine
-- **[F1.1] File Scanner & Finder:** Tìm kiếm đệ quy tất cả các file .php trong các thư mục được cấu hình.
+- [x] **[F1.1] File Scanner & Finder:** Tìm kiếm đệ quy tất cả các file .php trong các thư mục được cấu hình.
   - *AC:* Trả về danh sách đường dẫn file hợp lệ; bỏ qua các file trong vendor hoặc thư mục bị loại trừ.
-- **[F1.2] AST Parser Integration:** Tích hợp `nikic/php-parser` để đọc cấu trúc code.
+- [x] **[F1.2] AST Parser Integration:** Tích hợp `nikic/php-parser` để đọc cấu trúc code.
   - *AC:* Chuyển đổi mã nguồn thành cây AST; trích xuất được các Class Node và Method Node.
-- **[F1.3] Namespace Resolver:** Xác định chính xác FQCN (Fully Qualified Class Name) dựa trên `namespace` và `use` statements.
+- [x] **[F1.3] Namespace Resolver:** Xác định chính xác FQCN (Fully Qualified Class Name) dựa trên `namespace` và `use` statements.
   - *AC:* Trả về tên class đầy đủ ngay cả khi sử dụng alias.
-- **[F1.4] Basic DocBlock Collector:** Thu thập và phân tích các tag đơn giản (@route, @summary, @property).
+- [x] **[F1.4] Basic DocBlock Collector:** Thu thập và phân tích các tag đơn giản (@route, @summary, @property).
   - *AC:* Chuyển đổi PHPDoc thô thành các Object thuộc tính tương ứng.
 
 ### Features cho [Epic 2] Type System Pro
@@ -109,7 +109,7 @@ Thang điểm Fibonacci: 1, 2, 3, 5, 8, 13, 20.
 **Phân tích:**
 - **[F2.4] Schema Registry** có WSJF cao nhất vì nó giải quyết rủi ro kỹ thuật lớn (tham chiếu vòng) và có kích thước nhỏ. Cần làm sớm để làm nền móng.
 - **[F1.4] Basic DocBlock** có WSJF cao vì nó mang lại giá trị trực tiếp cho người dùng (thấy được kết quả).
-- **[F1.2] và [F1.3]** là nền tảng bắt buộc.
+- [x] **[F1.2] và [F1.3]** là nền tảng bắt buộc.
 
 
 ## 5. Transformation Roadmap & PI Objectives
