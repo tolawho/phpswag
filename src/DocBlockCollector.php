@@ -33,7 +33,7 @@ class DocBlockCollector
                 $tagName = $matches[1];
                 $value = isset($matches[2]) ? trim($matches[2]) : '';
 
-                if (in_array($tagName, ['@property', '@var', '@param', '@return', '@path', '@query', '@header', '@cookie'])) {
+                if (in_array($tagName, ['@property', '@var', '@return', '@path', '@query', '@header', '@cookie'])) {
                     try {
                         // For @path, @query, etc., we treat them similarly to @param for parsing convenience
                         $parseTagName = in_array($tagName, ['@path', '@query', '@header', '@cookie']) ? '@param' : $tagName;

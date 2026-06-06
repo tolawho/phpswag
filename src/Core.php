@@ -282,19 +282,6 @@ class Core
                     'schema' => $typeResolver->resolve($tag['type']),
                     'description' => is_array($tag['description']) ? ($tag['description']['description'] ?? null) : ($tag['description'] ?? null)
                 ];
-            } elseif ($tag['name'] === '@param' || $tag['name'] === '@request') {
-                // Keep legacy support or internal use
-                if ($tag['name'] === '@request') {
-                     $requestBody = [
-                        'schema' => $typeResolver->resolve($this->docCollector->parseType($tag['value'])),
-                    ];
-                } else {
-                     $parameters[] = [
-                        'name' => $tag['propertyName'],
-                        'schema' => $typeResolver->resolve($tag['type']),
-                        'description' => is_array($tag['description']) ? ($tag['description']['description'] ?? null) : ($tag['description'] ?? null),
-                    ];
-                }
             }
         }
 
