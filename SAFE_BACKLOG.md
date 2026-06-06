@@ -66,7 +66,7 @@
 - [x] **[F3.1] CLI Command Interface:** Cung cấp giao diện dòng lệnh cho người dùng.
 - [x] **[F3.2] OpenAPI Spec Generator:** Chuyển đổi dữ liệu IR thành file chuẩn OpenAPI.
 - [ ] **[F3.3] Performance Caching:** Lưu trữ kết quả phân tích để tăng tốc cho các lần chạy sau.
-- [ ] **[F3.4] README & Documentation:** Hướng dẫn cộng đồng cách sử dụng và đóng góp.
+- [x] **[F3.4] README & Documentation:** Hướng dẫn cộng đồng cách sử dụng và đóng góp.
 
 ### Features cho [Epic 4] Professional API Documentation
 - [x] **[F4.1] Global API Metadata Discovery:** Tự động trích xuất @title, @version, @description, @contact.*, @license.*, và @host từ toàn bộ project.
