@@ -23,3 +23,20 @@ Do đặc thù dự án có 1 nhân sự (Fullstack), chúng ta áp dụng mô h
 - **Iteration Planning:** Thực hiện vào đầu mỗi 2 tuần.
 - **System Demo:** Tự kiểm thử và chạy thử các ví dụ (Example code) để xác nhận tính năng đã hoàn thiện.
 - **Inspect & Adapt (I&A):** Đánh giá lại quy trình sau mỗi PI để cải tiến năng suất.
+
+## 5. Roadmap Triển khai (Proposed)
+
+### PI 1: Hoàn thiện Professional API Documentation
+- **Iteration 1: Foundation & Global Metadata**
+  - Thực hiện [F4.1] Global API Metadata Discovery.
+  - Xây dựng cơ chế quét PHPDoc toàn project cho Info Object.
+- **Iteration 2: Security & MIME Types**
+  - Thực hiện [F4.2] Security & Authentication Support.
+  - Thực hiện [F4.4] MIME Types & Response Alias.
+- **Iteration 3: Validation & Advanced Metadata**
+  - Thực hiện [F4.3] Comprehensive Schema Validation.
+  - Thực hiện [F4.5] Advanced Operation Metadata.
+- **Iteration 4: Optimization & Polish**
+  - Thực hiện [F3.3] Performance Caching.
+  - Cập nhật [F3.4] README & Documentation.
+  - System Demo & Release v1.0.0.
