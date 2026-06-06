@@ -274,13 +274,9 @@ class Generator
                     $this->collectFqcnsFromSchema($propSchema, $usedFqcns);
                 }
 
-                // Parent and traits
-                if ($schema->parent) {
-                    $usedFqcns[] = $schema->parent;
-                }
-                foreach ($schema->traits as $trait) {
-                    $usedFqcns[] = $trait;
-                }
+                // Parent and traits are NOT included in $usedFqcns automatically
+                // because we flatten them. Only include them if they are explicitly
+                // referenced via $ref in some property or response.
             }
         }
 
