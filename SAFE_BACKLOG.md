@@ -25,7 +25,7 @@
   - Xử lý được tham chiếu vòng (Circular References).
 
 ### [Epic 3] Tích hợp CLI và Tối ưu hóa Hiệu năng
-- **Trạng thái:** To Do
+- **Trạng thái:** In Progress
 - **Chủ sở hữu:** Fullstack Developer (User)
 - **Tóm tắt:** Hoàn thiện công cụ dưới dạng CLI, hỗ trợ nhiều định dạng xuất bản và cơ chế bộ nhớ đệm (Caching).
 - **Giả thuyết Lợi ích (Benefit Hypothesis):** Biến thư viện thành một công cụ dòng lệnh chuyên nghiệp dễ dàng tích hợp vào quy trình CI/CD, đồng thời đảm bảo tốc độ xử lý nhanh cho các dự án lớn.
@@ -59,7 +59,7 @@
   - *AC:* Không bị lỗi vòng lặp vô tận khi Class A chứa Class B và ngược lại.
 
 ### Features cho [Epic 3] Integration & CLI
-- [ ] **[F3.1] CLI Command Interface:** Cung cấp giao diện dòng lệnh cho người dùng.
+- [x] **[F3.1] CLI Command Interface:** Cung cấp giao diện dòng lệnh cho người dùng.
   - *AC:* Chạy được lệnh `php-swag generate --path=src`.
 - [x] **[F3.2] OpenAPI Spec Generator:** Chuyển đổi dữ liệu IR thành file chuẩn OpenAPI.
   - *AC:* Xuất ra file `swagger.yaml` hoặc `swagger.json` hợp lệ (v3.0/3.1).
