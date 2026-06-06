@@ -6,6 +6,7 @@ A framework-agnostic PHP Swagger/OpenAPI generator that uses static analysis (AS
 
 - **AST-based Static Analysis**: No need to run your application.
 - **Modern PHP Support**: Handles namespaces, use aliases, and complex types.
+- **Global API Metadata Discovery**: Automatically extracts `@title`, `@version`, `@description`, `@contact.*`, `@license.*`, and `@host` from any file.
 - **Auto-inference**: Automatically resolve route parameters and request bodies from method signatures.
 - **Advanced Type Resolution**:
     - Primitives: `int`, `string`, `bool`, `float`.
@@ -43,6 +44,23 @@ $yaml = $core->generate(['./src/App']);
 file_put_contents('swagger.yaml', $yaml);
 ```
 
+### Global Metadata Discovery
+
+You can define your API information in a top-level PHPDoc block in any of your scanned files:
+
+```php
+/**
+ * @title My Awesome API
+ * @version 2.1.0
+ * @description This is a sample API for testing global metadata.
+ * @contact.name John Doe
+ * @contact.email john@example.com
+ * @license.name MIT
+ * @license.url https://opensource.org/licenses/MIT
+ * @host https://api.example.com
+ */
+```
+
 ### Route Parameters Handling
 
 The library supports explicit tags and auto-inference (inspired by swaggo).
@@ -62,6 +80,16 @@ public function show(int $id, string $status) {}
 
 ## Support Tags
 
+- **Global Metadata**:
+    - `@title [TEXT]`
+    - `@version [TEXT]`
+    - `@description [TEXT]`
+    - `@contact.name [TEXT]`
+    - `@contact.email [TEXT]`
+    - `@contact.url [TEXT]`
+    - `@license.name [TEXT]`
+    - `@license.url [TEXT]`
+    - `@host [URL]`
 - **Endpoints**:
     - `@route [METHOD] [PATH]` (e.g., `@route POST /data`)
     - `@summary [TEXT]`
@@ -100,8 +128,12 @@ You can use the CLI to generate documentation without writing any PHP code:
 ```
 
 **Options:**
-- `--path`, `-p`: Path(s) to scan (can be used multiple times).
+- `--path`, `-p`: Path(s) to scan (can be used multiple times). Supports individual files or directories.
 - `--output`, `-o`: Output file path (defaults to stdout).
 - `--format`, `-f`: Output format (`yaml` or `json`). Default: `yaml`.
 - `--openapi-version`: OpenAPI version (`3.0.0` or `3.1.0`). Default: `3.0.0`.
 - `--filter-unused`: Filter out schemas that are not referenced by any route.
+- `--title`: API Title override.
+- `--api-version`: API Version override.
+- `--description`: API Description override.
+- `--host`: API Host/Server URL override.

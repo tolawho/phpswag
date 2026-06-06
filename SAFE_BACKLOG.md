@@ -66,10 +66,10 @@
 - [x] **[F3.1] CLI Command Interface:** Cung cấp giao diện dòng lệnh cho người dùng.
 - [x] **[F3.2] OpenAPI Spec Generator:** Chuyển đổi dữ liệu IR thành file chuẩn OpenAPI.
 - [ ] **[F3.3] Performance Caching:** Lưu trữ kết quả phân tích để tăng tốc cho các lần chạy sau.
-- [ ] **[F3.4] README & Documentation:** Hướng dẫn cộng đồng cách sử dụng và đóng góp.
+- [x] **[F3.4] README & Documentation:** Hướng dẫn cộng đồng cách sử dụng và đóng góp.
 
 ### Features cho [Epic 4] Professional API Documentation
-- [ ] **[F4.1] Global API Metadata Discovery:** Tự động trích xuất @title, @version, @description, @contact.*, @license.*, và @host từ toàn bộ project.
+- [x] **[F4.1] Global API Metadata Discovery:** Tự động trích xuất @title, @version, @description, @contact.*, @license.*, và @host từ toàn bộ project.
 - [ ] **[F4.2] Security & Authentication Support:** Định nghĩa @securityDefinitions (ApiKey/JWT) toàn cục và @security cho endpoint.
 - [ ] **[F4.3] Comprehensive Schema Validation:** Hỗ trợ các tag @minimum, @maximum, @minLength, @maxLength, @pattern, @format, @example cho Model properties và Route parameters.
 - [ ] **[F4.4] MIME Types & Response Alias:** Hỗ trợ @accept, @produce (mặc định application/json) và alias @success/@failure.
@@ -84,9 +84,9 @@
 - [x] **[S2.5.4] Extra Metadata Parsing:** Trích xuất enum() và default() ngay từ chuỗi mô tả trong PHPDoc.
 
 ### Stories cho [F4.1] Global API Metadata
-- [ ] **[S4.1.1] Global DocBlock Scanner:** Cơ chế quét và tìm kiếm khối thông tin chung của API trong toàn bộ project.
-- [ ] **[S4.1.2] Info Object Mapping:** Ánh xạ các tag @title, @version, @description, @contact, @license vào Info Object của OpenAPI.
-- [ ] **[S4.1.3] Host & BasePath Support:** Xử lý tag @host để xác định URL cơ sở.
+- [x] **[S4.1.1] Global DocBlock Scanner:** Cơ chế quét và tìm kiếm khối thông tin chung của API trong toàn bộ project.
+- [x] **[S4.1.2] Info Object Mapping:** Ánh xạ các tag @title, @version, @description, @contact, @license vào Info Object của OpenAPI.
+- [x] **[S4.1.3] Host & BasePath Support:** Xử lý tag @host để xác định URL cơ sở.
 
 ### Stories cho [F4.2] Security & Authentication
 - [ ] **[S4.2.1] Security Definitions Parser:** Phân tích các định nghĩa bảo mật (API Key, Bearer JWT) từ PHPDoc.

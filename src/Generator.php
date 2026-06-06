@@ -12,6 +12,12 @@ class Generator
     private SchemaRegistry $schemaRegistry;
     private string $openApiVersion = '3.0.0';
     private bool $filterUnusedSchemas = false;
+    private string $title = 'API Documentation';
+    private string $apiVersion = '1.0.0';
+    private ?string $description = null;
+    private ?array $contact = null;
+    private ?array $license = null;
+    private array $servers = [];
 
     public function __construct(SchemaRegistry $schemaRegistry)
     {
@@ -26,6 +32,36 @@ class Generator
     public function setFilterUnusedSchemas(bool $filter): void
     {
         $this->filterUnusedSchemas = $filter;
+    }
+
+    public function setTitle(string $title): void
+    {
+        $this->title = $title;
+    }
+
+    public function setApiVersion(string $version): void
+    {
+        $this->apiVersion = $version;
+    }
+
+    public function setDescription(?string $description): void
+    {
+        $this->description = $description;
+    }
+
+    public function setContact(?array $contact): void
+    {
+        $this->contact = $contact;
+    }
+
+    public function setLicense(?array $license): void
+    {
+        $this->license = $license;
+    }
+
+    public function setServers(array $servers): void
+    {
+        $this->servers = $servers;
     }
 
     public function addRoute(RouteDefinition $route): void
@@ -45,17 +81,35 @@ class Generator
 
     public function generateSpec(): array
     {
+        $info = [
+            'title' => $this->title,
+            'version' => $this->apiVersion,
+        ];
+
+        if ($this->description !== null) {
+            $info['description'] = $this->description;
+        }
+
+        if ($this->contact !== null) {
+            $info['contact'] = $this->contact;
+        }
+
+        if ($this->license !== null) {
+            $info['license'] = $this->license;
+        }
+
         $spec = [
             'openapi' => $this->openApiVersion,
-            'info' => [
-                'title' => 'API Documentation',
-                'version' => '1.0.0'
-            ],
+            'info' => $info,
             'paths' => [],
             'components' => [
                 'schemas' => []
             ]
         ];
+
+        if (!empty($this->servers)) {
+            $spec['servers'] = $this->servers;
+        }
 
         foreach ($this->routes as $route) {
             $path = $route->path;

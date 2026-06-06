@@ -21,7 +21,11 @@ class GenerateCommand extends Command
             ->addOption('output', 'o', InputOption::VALUE_REQUIRED, 'Output file path (default: stdout)')
             ->addOption('format', 'f', InputOption::VALUE_REQUIRED, 'Output format (yaml or json)', 'yaml')
             ->addOption('openapi-version', null, InputOption::VALUE_REQUIRED, 'OpenAPI version (3.0.0 or 3.1.0)', '3.0.0')
-            ->addOption('filter-unused', null, InputOption::VALUE_NONE, 'Filter unused schemas');
+            ->addOption('filter-unused', null, InputOption::VALUE_NONE, 'Filter unused schemas')
+            ->addOption('title', null, InputOption::VALUE_REQUIRED, 'API Title')
+            ->addOption('api-version', null, InputOption::VALUE_REQUIRED, 'API Version')
+            ->addOption('description', null, InputOption::VALUE_REQUIRED, 'API Description')
+            ->addOption('host', null, InputOption::VALUE_REQUIRED, 'API Host/Server URL');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -35,6 +39,19 @@ class GenerateCommand extends Command
         $core = new Core();
         $core->setOpenApiVersion($input->getOption('openapi-version'));
         $core->setFilterUnusedSchemas($input->getOption('filter-unused'));
+
+        if ($title = $input->getOption('title')) {
+            $core->setTitle($title);
+        }
+        if ($apiVersion = $input->getOption('api-version')) {
+            $core->setApiVersion($apiVersion);
+        }
+        if ($description = $input->getOption('description')) {
+            $core->setDescription($description);
+        }
+        if ($host = $input->getOption('host')) {
+            $core->setServers([['url' => $host]]);
+        }
 
         $format = strtolower($input->getOption('format'));
         if ($format === 'json') {

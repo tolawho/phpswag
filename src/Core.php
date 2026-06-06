@@ -26,6 +26,10 @@ class Core
 
     private bool $isAnalyzed = false;
 
+    private array $globalMetadata = [];
+    private array $metadataSources = [];
+    private array $cliOverrides = [];
+
     public function __construct()
     {
         $this->scanner = new Scanner();
@@ -59,6 +63,8 @@ class Core
             $this->discoverFile($file);
         }
 
+        $this->applyGlobalMetadata();
+
         // Pass 2: Analysis
         foreach ($this->discoveredClasses as $fqcn => $data) {
             $this->analyzeClass($fqcn, $data['node'], $data['nameResolver']);
@@ -90,6 +96,9 @@ class Core
         $code = file_get_contents($filePath);
         $stmts = $this->parser->parse($code);
 
+        // Check for global metadata in comments
+        $this->discoverGlobalMetadata($code, $filePath);
+
         $nameResolver = new NameResolver();
         $traverser = new NodeTraverser();
         $traverser->addVisitor($nameResolver);
@@ -103,6 +112,74 @@ class Core
             } else {
                 $this->discoverStatement($stmt, $nameResolver);
             }
+        }
+    }
+
+    private function discoverGlobalMetadata(string $code, string $filePath): void
+    {
+        $tokens = token_get_all($code);
+        foreach ($tokens as $token) {
+            if (is_array($token) && $token[0] === T_DOC_COMMENT) {
+                $docComment = $token[1];
+                $tags = $this->docCollector->collectTags($docComment);
+                foreach ($tags as $tag) {
+                    $tagName = $tag['name'];
+                    if (in_array($tagName, ['@title', '@version', '@description', '@host']) ||
+                        str_starts_with($tagName, '@contact.') ||
+                        str_starts_with($tagName, '@license.')) {
+
+                        $val = $tag['value'] ?? '';
+                        if (isset($this->globalMetadata[$tagName]) && $this->globalMetadata[$tagName] !== $val) {
+                            throw new \Exception(sprintf(
+                                "Duplicate global tag '%s' found in %s and %s",
+                                $tagName,
+                                $this->metadataSources[$tagName],
+                                $filePath
+                            ));
+                        }
+                        $this->globalMetadata[$tagName] = $val;
+                        $this->metadataSources[$tagName] = $filePath;
+                    }
+                }
+            }
+        }
+    }
+
+    private function applyGlobalMetadata(): void
+    {
+        $title = $this->cliOverrides['title'] ?? $this->globalMetadata['@title'] ?? null;
+        if ($title !== null) {
+            $this->generator->setTitle($title);
+        }
+
+        $apiVersion = $this->cliOverrides['api-version'] ?? $this->globalMetadata['@version'] ?? null;
+        if ($apiVersion !== null) {
+            $this->generator->setApiVersion($apiVersion);
+        }
+
+        $description = $this->cliOverrides['description'] ?? $this->globalMetadata['@description'] ?? null;
+        if ($description !== null) {
+            $this->generator->setDescription($description);
+        }
+
+        $contact = [];
+        if (isset($this->globalMetadata['@contact.name'])) $contact['name'] = $this->globalMetadata['@contact.name'];
+        if (isset($this->globalMetadata['@contact.email'])) $contact['email'] = $this->globalMetadata['@contact.email'];
+        if (isset($this->globalMetadata['@contact.url'])) $contact['url'] = $this->globalMetadata['@contact.url'];
+        if (!empty($contact)) {
+            $this->generator->setContact($contact);
+        }
+
+        $license = [];
+        if (isset($this->globalMetadata['@license.name'])) $license['name'] = $this->globalMetadata['@license.name'];
+        if (isset($this->globalMetadata['@license.url'])) $license['url'] = $this->globalMetadata['@license.url'];
+        if (!empty($license)) {
+            $this->generator->setLicense($license);
+        }
+
+        $host = $this->cliOverrides['host'] ?? $this->globalMetadata['@host'] ?? null;
+        if ($host !== null) {
+            $this->generator->setServers([['url' => $host]]);
         }
     }
 
@@ -350,6 +427,40 @@ class Core
                 parameters: $parameters,
                 requestBody: $requestBody
             ));
+        }
+    }
+
+    public function setTitle(string $title): void
+    {
+        $this->cliOverrides['title'] = $title;
+    }
+
+    public function setApiVersion(string $version): void
+    {
+        $this->cliOverrides['api-version'] = $version;
+    }
+
+    public function setDescription(?string $description): void
+    {
+        $this->cliOverrides['description'] = $description;
+    }
+
+    public function setContact(?array $contact): void
+    {
+        $this->generator->setContact($contact);
+    }
+
+    public function setLicense(?array $license): void
+    {
+        $this->generator->setLicense($license);
+    }
+
+    public function setServers(array $servers): void
+    {
+        if (isset($servers[0]['url'])) {
+            $this->cliOverrides['host'] = $servers[0]['url'];
+        } else {
+            $this->generator->setServers($servers);
         }
     }
 }
