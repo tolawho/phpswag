@@ -12,6 +12,7 @@ class Generator
     private array $routes = [];
     private SchemaRegistry $schemaRegistry;
     private string $openApiVersion = '3.0.0';
+    private bool $filterUnusedSchemas = false;
 
     public function __construct(SchemaRegistry $schemaRegistry)
     {
@@ -21,6 +22,11 @@ class Generator
     public function setVersion(string $version): void
     {
         $this->openApiVersion = $version;
+    }
+
+    public function setFilterUnusedSchemas(bool $filter): void
+    {
+        $this->filterUnusedSchemas = $filter;
     }
 
     public function addRoute(RouteDefinition $route): void
@@ -52,17 +58,43 @@ class Generator
 
             $routeSpec = [
                 'summary' => $route->summary,
-                'description' => $route->description,
                 'responses' => []
             ];
+
+            if ($route->description !== null && $route->description !== '') {
+                $routeSpec['description'] = (string)$route->description;
+            }
 
             if (!empty($route->tags)) {
                 $routeSpec['tags'] = $route->tags;
             }
 
+            if (!empty($route->parameters)) {
+                $routeSpec['parameters'] = [];
+                foreach ($route->parameters as $param) {
+                    $in = 'query';
+                    if (strpos($path, '{' . $param['name'] . '}') !== false) {
+                        $in = 'path';
+                    }
+
+                    $paramSpec = [
+                        'name' => $param['name'],
+                        'in' => $in,
+                        'required' => $in === 'path',
+                        'schema' => $this->processSchemaOutput($param['schema'])
+                    ];
+
+                    if (!empty($param['description'])) {
+                        $paramSpec['description'] = (string)$param['description'];
+                    }
+
+                    $routeSpec['parameters'][] = $paramSpec;
+                }
+            }
+
             if (!empty($route->responses)) {
                 foreach ($route->responses as $code => $schema) {
-                    $routeSpec['responses'][$code] = [
+                    $routeSpec['responses'][(string)$code] = [
                         'description' => 'OK',
                         'content' => [
                             'application/json' => [
@@ -80,7 +112,12 @@ class Generator
             $spec['paths'][$path][$method] = $routeSpec;
         }
 
-        foreach ($this->schemaRegistry->getAll() as $schema) {
+        $schemasToGenerate = $this->schemaRegistry->getAll();
+        if ($this->filterUnusedSchemas) {
+            $schemasToGenerate = $this->getUsedSchemas();
+        }
+
+        foreach ($schemasToGenerate as $schema) {
             if (!empty($schema->templates) && empty($schema->typeArguments)) {
                 continue; // Don't generate base generic schemas
             }
@@ -89,10 +126,7 @@ class Generator
             $propSpecs = [];
             foreach ($properties as $prop) {
                 $propSchema = $this->applyTypeArguments($prop->schema, $schema->typeArguments);
-                if ($prop->description) {
-                    $propSchema['description'] = $prop->description;
-                }
-                $propSpecs[$prop->name] = $this->processSchemaOutput($propSchema);
+                $propSpecs[$prop->name] = $this->processSchemaOutput($propSchema, $prop->description);
             }
 
             $spec['components']['schemas'][$this->schemaRegistry->getSchemaId($schema->name)] = [
@@ -104,7 +138,7 @@ class Generator
         return Yaml::dump($spec, 10, 2);
     }
 
-    private function processSchemaOutput(array $schema): array
+    private function processSchemaOutput(array $schema, ?string $description = null): array
     {
         if ($this->openApiVersion === '3.1.0') {
             if (isset($schema['nullable']) && $schema['nullable'] === true) {
@@ -121,6 +155,15 @@ class Generator
                      $schema['oneOf'][] = ['type' => 'null'];
                 }
             }
+        }
+
+        if (isset($schema['$ref'])) {
+            // Omit description when $ref is present as per OpenAPI 3.0 rules
+            return ['$ref' => $schema['$ref']];
+        }
+
+        if ($description !== null && $description !== '') {
+            $schema['description'] = (string)$description;
         }
 
         if (isset($schema['items'])) {
@@ -196,5 +239,82 @@ class Generator
         }
 
         return $schema;
+    }
+
+    private function getUsedSchemas(): array
+    {
+        $usedFqcns = [];
+
+        foreach ($this->routes as $route) {
+            foreach ($route->responses as $schema) {
+                $this->collectFqcnsFromSchema($schema, $usedFqcns);
+            }
+            foreach ($route->parameters as $param) {
+                $this->collectFqcnsFromSchema($param['schema'], $usedFqcns);
+            }
+        }
+
+        $usedSchemas = [];
+        $processed = [];
+
+        while (!empty($usedFqcns)) {
+            $fqcn = array_shift($usedFqcns);
+            if (isset($processed[$fqcn])) {
+                continue;
+            }
+            $processed[$fqcn] = true;
+
+            $schema = $this->schemaRegistry->get($fqcn);
+            if ($schema) {
+                $usedSchemas[$fqcn] = $schema;
+
+                // Also collect FQCNs from properties
+                foreach ($this->resolveAllProperties($schema) as $prop) {
+                    $propSchema = $this->applyTypeArguments($prop->schema, $schema->typeArguments);
+                    $this->collectFqcnsFromSchema($propSchema, $usedFqcns);
+                }
+
+                // Parent and traits
+                if ($schema->parent) {
+                    $usedFqcns[] = $schema->parent;
+                }
+                foreach ($schema->traits as $trait) {
+                    $usedFqcns[] = $trait;
+                }
+            }
+        }
+
+        return array_values($usedSchemas);
+    }
+
+    private function collectFqcnsFromSchema(array $schema, array &$usedFqcns): void
+    {
+        if (isset($schema['$ref'])) {
+            $ref = $schema['$ref'];
+            $prefix = '#/components/schemas/';
+            if (strpos($ref, $prefix) === 0) {
+                $schemaId = substr($ref, strlen($prefix));
+                // We need to find the FQCN by schema ID.
+                // Let's optimize this by looking at all registered schemas.
+                foreach ($this->schemaRegistry->getAll() as $s) {
+                    if ($this->schemaRegistry->getSchemaId($s->name) === $schemaId) {
+                        $usedFqcns[] = $s->name;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (isset($schema['items'])) {
+            $this->collectFqcnsFromSchema($schema['items'], $usedFqcns);
+        }
+
+        foreach (['oneOf', 'anyOf', 'allOf'] as $key) {
+            if (isset($schema[$key])) {
+                foreach ($schema[$key] as $sub) {
+                    $this->collectFqcnsFromSchema($sub, $usedFqcns);
+                }
+            }
+        }
     }
 }
