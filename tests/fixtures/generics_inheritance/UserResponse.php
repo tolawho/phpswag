@@ -1,0 +1,1 @@
+<?php namespace App; use App\BaseResponse; /** @extends BaseResponse<User> */ class UserResponse extends BaseResponse { /** @var string */ public $message; }

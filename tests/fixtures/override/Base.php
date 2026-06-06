@@ -1,0 +1,1 @@
+<?php namespace App; class Base { /** @var string */ public $type = "base"; }

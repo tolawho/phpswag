@@ -1,0 +1,1 @@
+<?php namespace App; /** @template T */ class BaseResponse { /** @var T */ public $data; }

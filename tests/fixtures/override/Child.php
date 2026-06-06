@@ -1,0 +1,1 @@
+<?php namespace App; class Child extends Base { /** @var int */ public $type = 1; }

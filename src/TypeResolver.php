@@ -8,16 +8,19 @@ use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\NullableTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use PHPStan\PhpDocParser\Ast\Type\UnionTypeNode;
+use PhpSwag\IR\SchemaDefinition;
 
 class TypeResolver
 {
     private SchemaRegistry $schemaRegistry;
     private NameResolver $nameResolver;
+    private array $templates = [];
 
-    public function __construct(SchemaRegistry $schemaRegistry, NameResolver $nameResolver)
+    public function __construct(SchemaRegistry $schemaRegistry, NameResolver $nameResolver, array $templates = [])
     {
         $this->schemaRegistry = $schemaRegistry;
         $this->nameResolver = $nameResolver;
+        $this->templates = $templates;
     }
 
     public function resolve(TypeNode $typeNode): array
@@ -67,8 +70,8 @@ class TypeResolver
                     'items' => $this->resolve($typeNode->genericTypes[0])
                 ];
             }
-            // Handle other generics like Collection<T> or ApiResponse<T> later
-            return $this->resolveIdentifier($typeNode->type->name);
+
+            return $this->resolveGeneric($typeNode);
         }
 
         return ['type' => 'string'];
@@ -76,6 +79,10 @@ class TypeResolver
 
     private function resolveIdentifier(string $name): array
     {
+        if (in_array($name, $this->templates)) {
+            return ['type' => $name]; // Return template name as "type" to be substituted later
+        }
+
         $lowered = strtolower($name);
         $map = [
             'int' => 'integer',
@@ -85,7 +92,7 @@ class TypeResolver
             'boolean' => 'boolean',
             'float' => 'number',
             'double' => 'number',
-            'mixed' => 'string', // OpenAPI doesn't have mixed, default to string or object
+            'mixed' => 'string',
             'void' => null,
         ];
 
@@ -93,10 +100,57 @@ class TypeResolver
             return $map[$lowered] ? ['type' => $map[$lowered]] : [];
         }
 
-        // It's likely a class reference
         $fqcn = $this->nameResolver->resolve($name);
         return [
             '$ref' => '#/components/schemas/' . $this->schemaRegistry->getSchemaId($fqcn)
+        ];
+    }
+
+    private function resolveGeneric(GenericTypeNode $typeNode): array
+    {
+        $baseName = $typeNode->type->name;
+        $fqcn = $this->nameResolver->resolve($baseName);
+
+        $baseSchema = $this->schemaRegistry->get($fqcn);
+        if (!$baseSchema || empty($baseSchema->templates)) {
+            return $this->resolveIdentifier($baseName);
+        }
+
+        $args = [];
+        $ids = [];
+        foreach ($typeNode->genericTypes as $i => $argNode) {
+            $resolvedArg = $this->resolve($argNode);
+            $templateName = $baseSchema->templates[$i] ?? "T$i";
+            $args[$templateName] = $resolvedArg;
+
+            if (isset($resolvedArg['$ref'])) {
+                $refParts = explode('/', $resolvedArg['$ref']);
+                $ids[] = end($refParts);
+            } elseif (isset($resolvedArg['type'])) {
+                $ids[] = ucfirst($resolvedArg['type']);
+            } else {
+                $ids[] = 'Mixed';
+            }
+        }
+
+        $instantiatedFqcn = $fqcn . '<' . implode(',', $ids) . '>';
+
+        if (!$this->schemaRegistry->has($instantiatedFqcn)) {
+            $instantiatedSchema = new SchemaDefinition(
+                name: $instantiatedFqcn,
+                properties: $baseSchema->properties,
+                parent: $baseSchema->parent,
+                traits: $baseSchema->traits,
+                typeArguments: $args
+            );
+            $this->schemaRegistry->register($instantiatedSchema);
+
+            $baseId = $this->schemaRegistry->getSchemaId($fqcn);
+            $this->schemaRegistry->setCustomSchemaId($instantiatedFqcn, $baseId . '.' . implode('.', $ids));
+        }
+
+        return [
+            '$ref' => '#/components/schemas/' . $this->schemaRegistry->getSchemaId($instantiatedFqcn)
         ];
     }
 }
