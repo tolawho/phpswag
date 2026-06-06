@@ -1,0 +1,1 @@
+<?php namespace App; trait Timestampable { /** @var string */ public $createdAt; }

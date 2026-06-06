@@ -9,6 +9,9 @@ class SchemaRegistry
     /** @var array<string, SchemaDefinition> */
     private array $schemas = [];
 
+    /** @var array<string, string> */
+    private array $customSchemaIds = [];
+
     public function register(SchemaDefinition $schema): void
     {
         $this->schemas[$schema->name] = $schema;
@@ -30,8 +33,16 @@ class SchemaRegistry
         return $this->schemas;
     }
 
+    public function setCustomSchemaId(string $fqcn, string $id): void
+    {
+        $this->customSchemaIds[$fqcn] = $id;
+    }
+
     public function getSchemaId(string $fqcn): string
     {
+        if (isset($this->customSchemaIds[$fqcn])) {
+            return $this->customSchemaIds[$fqcn];
+        }
         return str_replace('\\', '_', $fqcn);
     }
 }

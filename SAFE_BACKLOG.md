@@ -51,9 +51,9 @@
 ### Features cho [Epic 2] Type System Pro
 - [x] **[F2.1] Advanced Type Resolver:** Hỗ trợ các kiểu dữ liệu phức tạp của PHP hiện đại.
   - *AC:* Xử lý được union types (A|B), nullable (?A), và các kiểu nguyên thủy.
-- [ ] **[F2.2] Generics Support:** Phân tích cú pháp template cho các kiểu dữ liệu generic.
+- [x] **[F2.2] Generics Support:** Phân tích cú pháp template cho các kiểu dữ liệu generic.
   - *AC:* Hiểu được `Collection<User>` hoặc `ApiResponse<T>`.
-- [ ] **[F2.3] Inheritance & Trait Merger:** Gộp các thuộc tính từ các class cha và traits.
+- [x] **[F2.3] Inheritance & Trait Merger:** Gộp các thuộc tính từ các class cha và traits.
   - *AC:* Schema của class con phải bao gồm đầy đủ thuộc tính từ cây kế thừa.
 - [x] **[F2.4] Schema Registry:** Quản lý tập trung các định nghĩa Model để tránh trùng lặp và xử lý tham chiếu vòng.
   - *AC:* Không bị lỗi vòng lặp vô tận khi Class A chứa Class B và ngược lại.
@@ -61,7 +61,7 @@
 ### Features cho [Epic 3] Integration & CLI
 - [ ] **[F3.1] CLI Command Interface:** Cung cấp giao diện dòng lệnh cho người dùng.
   - *AC:* Chạy được lệnh `php-swag generate --path=src`.
-- [ ] **[F3.2] OpenAPI Spec Generator:** Chuyển đổi dữ liệu IR thành file chuẩn OpenAPI.
+- [x] **[F3.2] OpenAPI Spec Generator:** Chuyển đổi dữ liệu IR thành file chuẩn OpenAPI.
   - *AC:* Xuất ra file `swagger.yaml` hoặc `swagger.json` hợp lệ (v3.0/3.1).
 - [ ] **[F3.3] Performance Caching:** Lưu trữ kết quả phân tích để tăng tốc cho các lần chạy sau.
   - *AC:* Tốc độ generate lần 2 phải nhanh hơn ít nhất 50% so với lần đầu.

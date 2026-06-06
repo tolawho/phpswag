@@ -41,4 +41,20 @@ class DocBlockCollectorTest extends TestCase
         $this->assertEquals('name', $tags[0]['propertyName']);
         $this->assertEquals('User name', $tags[0]['description']);
     }
+
+    public function testParseTypeWithArrays()
+    {
+        $collector = new DocBlockCollector();
+
+        $node = $collector->parseType('User[]');
+        $this->assertInstanceOf(\PHPStan\PhpDocParser\Ast\Type\ArrayTypeNode::class, $node);
+        $this->assertInstanceOf(IdentifierTypeNode::class, $node->type);
+        $this->assertEquals('User', $node->type->name);
+
+        $nestedNode = $collector->parseType('User[][]');
+        $this->assertInstanceOf(\PHPStan\PhpDocParser\Ast\Type\ArrayTypeNode::class, $nestedNode);
+        $this->assertInstanceOf(\PHPStan\PhpDocParser\Ast\Type\ArrayTypeNode::class, $nestedNode->type);
+        $this->assertInstanceOf(IdentifierTypeNode::class, $nestedNode->type->type);
+        $this->assertEquals('User', $nestedNode->type->type->name);
+    }
 }

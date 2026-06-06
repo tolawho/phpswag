@@ -28,7 +28,7 @@ class NameResolver extends NodeVisitorAbstract
     public function resolve(string $name): string
     {
         if (str_starts_with($name, '\\')) {
-            return substr($name, 1);
+            return ltrim($name, '\\');
         }
 
         $parts = explode('\\', $name);

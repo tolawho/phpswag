@@ -1,0 +1,1 @@
+<?php namespace App; /** @template T */ class Collection { /** @var T[] */ public $items; }

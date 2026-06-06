@@ -1,0 +1,1 @@
+<?php namespace App; class User extends Base { /** @var string */ public $name; }
