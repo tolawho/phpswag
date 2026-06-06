@@ -24,7 +24,9 @@ class DocBlockCollector
         $lines = explode("\n", $docComment);
         foreach ($lines as $line) {
             $line = trim($line, " \t\n\r\0\x0B*/");
-            if (empty($line)) continue;
+            if (empty($line)) {
+                continue;
+            }
 
             if (preg_match('/^(@[a-zA-Z0-9_]+)(?:\s+(.*))?$/', $line, $matches)) {
                 $tagName = $matches[1];
@@ -36,21 +38,21 @@ class DocBlockCollector
                         $node = $this->parser->parse($doc);
                         foreach ($node->getTags() as $tag) {
                              $v = $tag->value;
-                             if ($v instanceof \PHPStan\PhpDocParser\Ast\PhpDoc\PropertyTagValueNode) {
+                            if ($v instanceof \PHPStan\PhpDocParser\Ast\PhpDoc\PropertyTagValueNode) {
                                 $tags[] = [
-                                    'name' => $tagName,
-                                    'type' => $v->type,
-                                    'propertyName' => ltrim($v->propertyName, '$'),
-                                    'description' => $v->description
+                                   'name' => $tagName,
+                                   'type' => $v->type,
+                                   'propertyName' => ltrim($v->propertyName, '$'),
+                                   'description' => $v->description
                                 ];
-                             } elseif ($v instanceof \PHPStan\PhpDocParser\Ast\PhpDoc\VarTagValueNode) {
+                            } elseif ($v instanceof \PHPStan\PhpDocParser\Ast\PhpDoc\VarTagValueNode) {
                                 $tags[] = [
-                                    'name' => $tagName,
-                                    'type' => $v->type,
-                                    'propertyName' => $v->variableName ? ltrim($v->variableName, '$') : null,
-                                    'description' => $v->description
+                                   'name' => $tagName,
+                                   'type' => $v->type,
+                                   'propertyName' => $v->variableName ? ltrim($v->variableName, '$') : null,
+                                   'description' => $v->description
                                 ];
-                             }
+                            }
                         }
                     } catch (\Exception $e) {
                          $tags[] = ['name' => $tagName, 'value' => $value];
@@ -77,7 +79,9 @@ class DocBlockCollector
             $parts = $this->splitByComma($inner);
             foreach ($parts as $part) {
                 $node = $this->parseType(trim($part));
-                if ($node) $innerNodes[] = $node;
+                if ($node) {
+                    $innerNodes[] = $node;
+                }
             }
 
             return new GenericTypeNode(
@@ -96,8 +100,11 @@ class DocBlockCollector
         $depth = 0;
         for ($i = 0; $i < strlen($str); $i++) {
             $char = $str[$i];
-            if ($char === '<') $depth++;
-            elseif ($char === '>') $depth--;
+            if ($char === '<') {
+                $depth++;
+            } elseif ($char === '>') {
+                $depth--;
+            }
 
             if ($char === ',' && $depth === 0) {
                 $parts[] = $current;
@@ -106,7 +113,9 @@ class DocBlockCollector
                 $current .= $char;
             }
         }
-        if ($current !== '') $parts[] = $current;
+        if ($current !== '') {
+            $parts[] = $current;
+        }
         return $parts;
     }
 }

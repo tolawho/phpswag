@@ -141,14 +141,19 @@ class Generator
     {
         $properties = [];
 
-        if ($schema->parent && $parentSchema = $this->schemaRegistry->get($schema->parent)) {
+        $targetSchema = $schema;
+        if ($schema->base && $baseSchema = $this->schemaRegistry->get($schema->base)) {
+            $targetSchema = $baseSchema;
+        }
+
+        if ($targetSchema->parent && $parentSchema = $this->schemaRegistry->get($targetSchema->parent)) {
             $parentProps = $this->resolveAllProperties($parentSchema);
             foreach ($parentProps as $p) {
                 $properties[$p->name] = $p;
             }
         }
 
-        foreach ($schema->traits as $traitFqcn) {
+        foreach ($targetSchema->traits as $traitFqcn) {
             if ($traitSchema = $this->schemaRegistry->get($traitFqcn)) {
                 $traitProps = $this->resolveAllProperties($traitSchema);
                 foreach ($traitProps as $p) {
@@ -157,7 +162,7 @@ class Generator
             }
         }
 
-        foreach ($schema->properties as $p) {
+        foreach ($targetSchema->properties as $p) {
             $properties[$p->name] = $p;
         }
 
@@ -172,9 +177,9 @@ class Generator
 
         if (isset($schema['type']) && is_string($schema['type']) && isset($typeArgs[$schema['type']])) {
              $substituted = $typeArgs[$schema['type']];
-             if (isset($schema['nullable']) && $schema['nullable']) {
-                 $substituted['nullable'] = true;
-             }
+            if (isset($schema['nullable']) && $schema['nullable']) {
+                $substituted['nullable'] = true;
+            }
              return $substituted;
         }
 

@@ -10,6 +10,8 @@ class SchemaDefinition
         public ?string $parent = null,
         public array $traits = [],
         public array $templates = [], // e.g. ['T', 'K']
-        public array $typeArguments = [] // e.g. ['T' => ['type' => 'string']]
-    ) {}
+        public array $typeArguments = [], // e.g. ['T' => ['type' => 'string']]
+        public ?string $base = null
+    ) {
+    }
 }

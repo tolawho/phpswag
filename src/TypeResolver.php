@@ -141,7 +141,8 @@ class TypeResolver
                 properties: $baseSchema->properties,
                 parent: $baseSchema->parent,
                 traits: $baseSchema->traits,
-                typeArguments: $args
+                typeArguments: $args,
+                base: $fqcn
             );
             $this->schemaRegistry->register($instantiatedSchema);
 

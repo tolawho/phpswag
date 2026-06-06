@@ -216,7 +216,9 @@ class Core
         $lines = explode("\n", $methodDoc);
         foreach ($lines as $line) {
             $line = trim($line, " \t\n\r\0\x0B*/");
-            if (empty($line)) continue;
+            if (empty($line)) {
+                continue;
+            }
 
             if (preg_match('/^@route\s+(GET|POST|PUT|DELETE|PATCH)\s+(\S+)/i', $line, $matches)) {
                 $routeTag = strtoupper($matches[1]) . ' ' . $matches[2];
