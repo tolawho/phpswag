@@ -1,0 +1,163 @@
+openapi: 3.0.0
+info:
+  title: 'API Documentation'
+  version: 1.0.0
+paths:
+  /users:
+    get:
+      summary: 'List all users'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/App_Models_User'
+      tags:
+        - 'User Management'
+  '/users/{id}':
+    get:
+      summary: 'Get user details'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/App_Models_User'
+        '404':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: string
+      description: 'This endpoint returns a single user by their ID.'
+      tags:
+        - 'User Management'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'The user ID'
+  /posts:
+    get:
+      summary: 'List all posts with pagination'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/App_Models_ApiResponse.App_Models_Collection.App_Models_Post'
+      tags:
+        - Posts
+  '/posts/{id}':
+    get:
+      summary: 'Get a single post'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/App_Models_ApiResponse.App_Models_Post'
+      tags:
+        - Posts
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 'The post ID'
+components:
+  schemas:
+    App_Models_User:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 'User ID'
+        name:
+          type: string
+          description: 'User Full Name'
+        email:
+          type: string
+          nullable: true
+          description: 'User Email Address'
+        friends:
+          type: array
+          items:
+            $ref: '#/components/schemas/App_Models_User'
+          description: 'List of friends'
+    App_Models_Timestampable:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          description: 'Creation timestamp'
+        updatedAt:
+          type: string
+          description: 'Last update timestamp'
+    App_Models_Post:
+      type: object
+      properties:
+        title:
+          type: string
+          description: 'Post title'
+        content:
+          type: string
+          description: 'Post body content'
+    App_Models_BaseModel:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 'Unique identifier'
+    App_Controllers_UserController:
+      type: object
+      properties: {  }
+    App_Controllers_PostController:
+      type: object
+      properties: {  }
+    App_Models_Collection.App_Models_Post:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/App_Models_Post'
+          description: 'List of items'
+        total:
+          type: integer
+          description: 'Total count'
+    App_Models_ApiResponse.App_Models_Collection.App_Models_Post:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/App_Models_Collection.App_Models_Post'
+        status:
+          type: string
+          description: 'Status code (success/error)'
+        message:
+          type: string
+          nullable: true
+          description: 'Optional message'
+    App_Models_ApiResponse.App_Models_Post:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/App_Models_Post'
+        status:
+          type: string
+          description: 'Status code (success/error)'
+        message:
+          type: string
+          nullable: true
+          description: 'Optional message'

@@ -21,6 +21,7 @@ class UserController
      * @summary Get user details
      * @description This endpoint returns a single user by their ID.
      * @tag User Management
+     * @param int $id The user ID
      * @response 200 User
      * @response 404 string
      */

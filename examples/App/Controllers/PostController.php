@@ -22,6 +22,7 @@ class PostController
      * @route GET /posts/{id}
      * @summary Get a single post
      * @tag Posts
+     * @param int $id The post ID
      * @response 200 ApiResponse<Post>
      */
     public function show(int $id)

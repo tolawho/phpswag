@@ -38,6 +38,11 @@ class Core
         $this->generator->setVersion($version);
     }
 
+    public function setFilterUnusedSchemas(bool $filter): void
+    {
+        $this->generator->setFilterUnusedSchemas($filter);
+    }
+
     public function generate(array $paths): string
     {
         $this->scanner->setPaths($paths);
@@ -207,39 +212,41 @@ class Core
     private function analyzeMethod(ClassMethod $member, NameResolver $nameResolver, TypeResolver $typeResolver): void
     {
         $methodDoc = $member->getDocComment()?->getText() ?? '';
+        $tags = $this->docCollector->collectTags($methodDoc);
 
         $routeTag = null;
         $summary = null;
         $description = null;
         $tagsList = [];
         $responses = [];
+        $parameters = [];
 
-        $lines = explode("\n", $methodDoc);
-        foreach ($lines as $line) {
-            $line = trim($line, " \t\n\r\0\x0B*/");
-            if (empty($line)) {
-                continue;
-            }
-
-            if (preg_match('/^@route\s+(GET|POST|PUT|DELETE|PATCH)\s+(\S+)/i', $line, $matches)) {
-                $routeTag = strtoupper($matches[1]) . ' ' . $matches[2];
-            } elseif (preg_match('/^@summary\s+(.*)$/i', $line, $matches)) {
-                $summary = trim($matches[1]);
-            } elseif (preg_match('/^@description\s+(.*)$/i', $line, $matches)) {
-                $description = trim($matches[1]);
-            } elseif (preg_match('/^@tag\s+(.*)$/i', $line, $matches)) {
-                $tagsList[] = trim($matches[1]);
-            } elseif (preg_match('/^@response\s+(\d+)\s+(.*)$/i', $line, $matches)) {
-                $code = $matches[1];
-                $typeStr = trim($matches[2]);
-
-                $typeParts = preg_split('/\s+/', $typeStr);
-                $typeToParse = $typeParts[0];
-
-                $typeNode = $this->docCollector->parseType($typeToParse);
-                if ($typeNode) {
-                    $responses[$code] = $typeResolver->resolve($typeNode);
+        foreach ($tags as $tag) {
+            if ($tag['name'] === '@route') {
+                if (preg_match('/^(GET|POST|PUT|DELETE|PATCH)\s+(\S+)/i', $tag['value'], $matches)) {
+                    $routeTag = strtoupper($matches[1]) . ' ' . $matches[2];
                 }
+            } elseif ($tag['name'] === '@summary') {
+                $summary = $tag['value'];
+            } elseif ($tag['name'] === '@description') {
+                $description = $tag['value'];
+            } elseif ($tag['name'] === '@tag') {
+                $tagsList[] = $tag['value'];
+            } elseif ($tag['name'] === '@response') {
+                if (preg_match('/^(\d+)\s+(.*)$/', $tag['value'], $matches)) {
+                    $code = $matches[1];
+                    $typeToParse = trim($matches[2]);
+                    $typeNode = $this->docCollector->parseType($typeToParse);
+                    if ($typeNode) {
+                        $responses[$code] = $typeResolver->resolve($typeNode);
+                    }
+                }
+            } elseif ($tag['name'] === '@param') {
+                $parameters[] = [
+                    'name' => $tag['propertyName'],
+                    'schema' => $typeResolver->resolve($tag['type']),
+                    'description' => $tag['description'] ?: null,
+                ];
             }
         }
 
@@ -251,7 +258,8 @@ class Core
                 summary: $summary,
                 description: $description,
                 tags: $tagsList,
-                responses: $responses
+                responses: $responses,
+                parameters: $parameters
             ));
         }
     }

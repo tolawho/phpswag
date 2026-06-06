@@ -53,6 +53,13 @@ class DocBlockCollector
                                    'propertyName' => $v->variableName ? ltrim($v->variableName, '$') : null,
                                    'description' => $v->description
                                 ];
+                            } elseif ($v instanceof \PHPStan\PhpDocParser\Ast\PhpDoc\ParamTagValueNode) {
+                                $tags[] = [
+                                   'name' => $tagName,
+                                   'type' => $v->type,
+                                   'propertyName' => ltrim($v->parameterName, '$'),
+                                   'description' => $v->description
+                                ];
                             }
                         }
                     } catch (\Exception $e) {
