@@ -81,7 +81,8 @@ class Core
     {
         if ($stmt instanceof Class_ || $stmt instanceof Trait_) {
             $className = $stmt->name->toString();
-            $fqcn = ($nameResolver->getCurrentNamespace() ? $nameResolver->getCurrentNamespace() . '\\' : '') . $className;
+            $namespace = $nameResolver->getCurrentNamespace();
+            $fqcn = ($namespace ? $namespace . '\\' : '') . $className;
 
             $this->discoveredClasses[$fqcn] = [
                 'node' => $stmt,

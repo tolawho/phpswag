@@ -26,5 +26,9 @@
     },
     "config": {
         "sort-packages": true
+    },
+    "scripts": {
+        "lint": "phpcs",
+        "format": "phpcbf"
     }
 }

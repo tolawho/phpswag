@@ -4,6 +4,7 @@ namespace PhpSwag;
 
 use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\GenericTypeNode;
+use PHPStan\PhpDocParser\Ast\Type\ArrayTypeNode;
 
 class DocBlockCollector
 {
@@ -71,6 +72,11 @@ class DocBlockCollector
 
     public function parseType(string $typeString): \PHPStan\PhpDocParser\Ast\Type\TypeNode
     {
+        if (str_ends_with($typeString, '[]')) {
+            $inner = substr($typeString, 0, -2);
+            return new ArrayTypeNode($this->parseType($inner));
+        }
+
         if (preg_match('/^([a-zA-Z0-9_\\\\]+)<(.*)>$/', $typeString, $matches)) {
             $base = $matches[1];
             $inner = $matches[2];
