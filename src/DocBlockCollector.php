@@ -33,9 +33,11 @@ class DocBlockCollector
                 $tagName = $matches[1];
                 $value = isset($matches[2]) ? trim($matches[2]) : '';
 
-                if (in_array($tagName, ['@property', '@var', '@param', '@return'])) {
+                if (in_array($tagName, ['@property', '@var', '@return', '@path', '@query', '@header', '@cookie'])) {
                     try {
-                        $doc = "/** $line */";
+                        // For @path, @query, etc., we treat them similarly to @param for parsing convenience
+                        $parseTagName = in_array($tagName, ['@path', '@query', '@header', '@cookie']) ? '@param' : $tagName;
+                        $doc = "/** $parseTagName $value */";
                         $node = $this->parser->parse($doc);
                         foreach ($node->getTags() as $tag) {
                              $v = $tag->value;
@@ -44,26 +46,46 @@ class DocBlockCollector
                                    'name' => $tagName,
                                    'type' => $v->type,
                                    'propertyName' => ltrim($v->propertyName, '$'),
-                                   'description' => $v->description
+                                   'description' => $this->parseExtraAttributes($v->description)
                                 ];
                             } elseif ($v instanceof \PHPStan\PhpDocParser\Ast\PhpDoc\VarTagValueNode) {
                                 $tags[] = [
                                    'name' => $tagName,
                                    'type' => $v->type,
                                    'propertyName' => $v->variableName ? ltrim($v->variableName, '$') : null,
-                                   'description' => $v->description
+                                   'description' => $this->parseExtraAttributes($v->description)
                                 ];
                             } elseif ($v instanceof \PHPStan\PhpDocParser\Ast\PhpDoc\ParamTagValueNode) {
-                                $tags[] = [
+                                $res = [
                                    'name' => $tagName,
                                    'type' => $v->type,
                                    'propertyName' => ltrim($v->parameterName, '$'),
-                                   'description' => $v->description
                                 ];
+                                $parsedDesc = $this->parseExtraAttributes($v->description);
+                                $res = array_merge($res, $parsedDesc);
+                                $tags[] = $res;
                             }
                         }
                     } catch (\Exception $e) {
                          $tags[] = ['name' => $tagName, 'value' => $value];
+                    }
+                } elseif ($tagName === '@body') {
+                    // @body [Type] [Description]
+                    if (preg_match('/^([a-zA-Z0-9_\\<>|\[\]]+)(?:\s+(.*))?$/', $value, $m)) {
+                        $typeString = $m[1];
+                        $desc = isset($m[2]) ? $m[2] : '';
+
+                        try {
+                            $type = $this->parseType($typeString);
+                        } catch (\Exception $e) {
+                            $type = new IdentifierTypeNode($typeString);
+                        }
+
+                        $tags[] = [
+                            'name' => '@body',
+                            'type' => $type,
+                            'description' => $desc
+                        ];
                     }
                 } else {
                     $tags[] = [
@@ -75,6 +97,25 @@ class DocBlockCollector
         }
 
         return $tags;
+    }
+
+    private function parseExtraAttributes(string $description): array
+    {
+        $res = ['description' => $description];
+
+        // Parse enum(a,b,c)
+        if (preg_match('/enum\(([^)]+)\)/', $description, $matches)) {
+            $res['enum'] = array_map('trim', explode(',', $matches[1]));
+            $res['description'] = trim(str_replace($matches[0], '', $res['description']));
+        }
+
+        // Parse default(value)
+        if (preg_match('/default\(([^)]+)\)/', $description, $matches)) {
+            $res['default'] = trim($matches[1]);
+            $res['description'] = trim(str_replace($matches[0], '', $res['description']));
+        }
+
+        return $res;
     }
 
     public function parseType(string $typeString): \PHPStan\PhpDocParser\Ast\Type\TypeNode

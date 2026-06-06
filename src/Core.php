@@ -4,10 +4,10 @@ namespace PhpSwag;
 
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
-use PhpParser\Node\Stmt\ClassMethod;
-use PhpParser\Node\Stmt\Property;
 use PhpParser\Node\Stmt\Trait_;
 use PhpParser\Node\Stmt\TraitUse;
+use PhpParser\Node\Stmt\Property;
+use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\NodeTraverser;
 use PhpSwag\IR\PropertyDefinition;
 use PhpSwag\IR\RouteDefinition;
@@ -197,10 +197,12 @@ class Core
                 $isSchema = true;
                 $propertySchema = $typeResolver->resolve($tag['type']);
 
+                $desc = is_array($tag['description']) ? ($tag['description']['description'] ?? null) : ($tag['description'] ?? null);
+
                 $properties[] = new PropertyDefinition(
                     $tag['propertyName'],
                     $propertySchema,
-                    $tag['description']
+                    $desc
                 );
             }
         }
@@ -214,10 +216,12 @@ class Core
                     if ($pTag['name'] === '@var' && isset($pTag['type'])) {
                         $propertySchema = $typeResolver->resolve($pTag['type']);
 
+                        $desc = is_array($pTag['description']) ? ($pTag['description']['description'] ?? null) : ($pTag['description'] ?? null);
+
                         $properties[] = new PropertyDefinition(
                             $member->props[0]->name->toString(),
                             $propertySchema,
-                            $pTag['description']
+                            $desc
                         );
                     }
                 }
@@ -244,6 +248,7 @@ class Core
         $tagsList = [];
         $responses = [];
         $parameters = [];
+        $requestBody = null;
 
         foreach ($tags as $tag) {
             if ($tag['name'] === '@route') {
@@ -265,25 +270,85 @@ class Core
                         $responses[$code] = $typeResolver->resolve($typeNode);
                     }
                 }
-            } elseif ($tag['name'] === '@param') {
-                $parameters[] = [
-                    'name' => $tag['propertyName'],
+            } elseif (in_array($tag['name'], ['@path', '@query', '@header', '@cookie'])) {
+                $in = substr($tag['name'], 1);
+                $parameters[] = array_merge($tag, [
+                    'in' => $in,
                     'schema' => $typeResolver->resolve($tag['type']),
-                    'description' => $tag['description'] ?: null,
+                    'name' => $tag['propertyName']
+                ]);
+            } elseif ($tag['name'] === '@body') {
+                $requestBody = [
+                    'schema' => $typeResolver->resolve($tag['type']),
+                    'description' => is_array($tag['description']) ? ($tag['description']['description'] ?? null) : ($tag['description'] ?? null)
                 ];
             }
         }
 
         if ($routeTag) {
             $routeParts = explode(' ', $routeTag);
+            $path = $routeParts[1];
+
+            // Auto-inference from method parameters
+            foreach ($member->params as $param) {
+                $paramName = $param->var->name;
+
+                // Skip if already defined by explicit tags
+                $exists = false;
+                foreach ($parameters as $p) {
+                    if ($p['name'] === $paramName) {
+                        $exists = true;
+                        break;
+                    }
+                }
+                if ($exists) continue;
+
+                $type = 'mixed';
+                if ($param->type instanceof Node\Identifier) {
+                    $type = $param->type->toString();
+                } elseif ($param->type instanceof Node\Name) {
+                    $resolved = $param->type->getAttribute('resolvedName');
+                    if ($resolved) {
+                        $type = '\\' . $resolved->toString();
+                    } else {
+                        $type = $param->type->toString();
+                    }
+                }
+
+                $schema = $typeResolver->resolve($this->docCollector->parseType($type));
+
+                // If it's a class and not primitive, infer as requestBody if not already set
+                $isPrimitive = in_array(ltrim($type, '\\'), ['int', 'string', 'bool', 'float', 'array', 'mixed']);
+
+                if (!$isPrimitive && $requestBody === null) {
+                    $requestBody = [
+                        'schema' => $schema,
+                        'description' => 'Auto-inferred from method parameter $' . $paramName
+                    ];
+                } else {
+                    $in = 'query';
+                    if (strpos($path, '{' . $paramName . '}') !== false) {
+                        $in = 'path';
+                    }
+
+                    $parameters[] = [
+                        'name' => $paramName,
+                        'in' => $in,
+                        'schema' => $schema,
+                        'description' => 'Auto-inferred from method parameter'
+                    ];
+                }
+            }
+
             $this->generator->addRoute(new RouteDefinition(
                 method: $routeParts[0],
-                path: $routeParts[1],
+                path: $path,
                 summary: $summary,
                 description: $description,
                 tags: $tagsList,
                 responses: $responses,
-                parameters: $parameters
+                parameters: $parameters,
+                requestBody: $requestBody
             ));
         }
     }

@@ -10,9 +10,9 @@ class RouteDefinition
         public ?string $summary = null,
         public ?string $description = null,
         public array $tags = [],
-        public ?string $responseRef = null,
         public array $responses = [],
-        public array $parameters = []
+        public array $parameters = [],
+        public ?array $requestBody = null
     ) {
     }
 }

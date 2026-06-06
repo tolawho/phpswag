@@ -39,7 +39,7 @@ class DocBlockCollectorTest extends TestCase
         $this->assertInstanceOf(IdentifierTypeNode::class, $tags[0]['type']);
         $this->assertEquals('string', (string)$tags[0]['type']);
         $this->assertEquals('name', $tags[0]['propertyName']);
-        $this->assertEquals('User name', $tags[0]['description']);
+        $this->assertEquals('User name', $tags[0]['description']['description']);
     }
 
     public function testParseTypeWithArrays()

@@ -6,6 +6,7 @@ A framework-agnostic PHP Swagger/OpenAPI generator that uses static analysis (AS
 
 - **AST-based Static Analysis**: No need to run your application.
 - **Modern PHP Support**: Handles namespaces, use aliases, and complex types.
+- **Auto-inference**: Automatically resolve route parameters and request bodies from method signatures.
 - **Advanced Type Resolution**:
     - Primitives: `int`, `string`, `bool`, `float`.
     - Nullable types: `?string` or `string|null`.
@@ -42,50 +43,22 @@ $yaml = $core->generate(['./src/App']);
 file_put_contents('swagger.yaml', $yaml);
 ```
 
-### Advanced Types Example
+### Route Parameters Handling
 
-#### Models with Inheritance and Generics
+The library supports explicit tags and auto-inference (inspired by swaggo).
+
 ```php
-namespace App\Models;
-
 /**
- * @template T
- * @property T $data
+ * @route GET /users/{id}
+ * @path int $id User unique ID
+ * @query string $status Filter by status enum(active,inactive) default(active)
  */
-class ApiResponse {}
-
-/**
- * @property int $id
- */
-class BaseModel {}
-
-/**
- * @property string $title
- */
-class Post extends BaseModel {}
-
-/**
- * @extends ApiResponse<Post>
- */
-class PostResponse extends ApiResponse {}
+public function show(int $id, string $status) {}
 ```
 
-#### Controller using Complex Types
-```php
-namespace App\Controllers;
-
-use App\Models\ApiResponse;
-use App\Models\Post;
-
-class PostController
-{
-    /**
-     * @route GET /posts/{id}
-     * @response 200 ApiResponse<Post>
-     */
-    public function show(int $id) {}
-}
-```
+- **Explicit Tags**: `@path`, `@query`, `@header`, `@cookie`, `@body`.
+- **Metadata**: Support `enum(a,b,c)` and `default(value)` in descriptions.
+- **Auto-inference**: If no tags are provided, parameters are inferred from the method signature. Primitive types match path/query, and class types match the request body.
 
 ## Support Tags
 
@@ -94,6 +67,11 @@ class PostController
     - `@summary [TEXT]`
     - `@description [TEXT]`
     - `@tag [NAME]`
+    - `@path [TYPE] $[NAME] [DESC]`
+    - `@query [TYPE] $[NAME] [DESC]`
+    - `@header [TYPE] $[NAME] [DESC]`
+    - `@cookie [TYPE] $[NAME] [DESC]`
+    - `@body [TYPE] [DESC]`
     - `@response [CODE] [TYPE]` (e.g., `@response 200 ApiResponse<User[]>`)
 - **Models**:
     - `@property [TYPE] $[NAME] [DESCRIPTION]`
