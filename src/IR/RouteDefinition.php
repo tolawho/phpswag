@@ -12,6 +12,5 @@ class RouteDefinition
         public array $tags = [],
         public ?string $responseRef = null,
         public array $responses = []
-    ) {
-    }
+    ) {}
 }

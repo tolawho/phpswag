@@ -8,6 +8,5 @@ class PropertyDefinition
         public string $name,
         public array $schema,
         public ?string $description = null
-    ) {
-    }
+    ) {}
 }

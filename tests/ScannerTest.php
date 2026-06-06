@@ -39,11 +39,10 @@ class ScannerTest extends TestCase
             $objects = scandir($dir);
             foreach ($objects as $object) {
                 if ($object != "." && $object != "..") {
-                    if (is_dir($dir . DIRECTORY_SEPARATOR . $object) && !is_link($dir . "/" . $object)) {
+                    if (is_dir($dir . DIRECTORY_SEPARATOR . $object) && !is_link($dir . "/" . $object))
                         $this->removeDir($dir . DIRECTORY_SEPARATOR . $object);
-                    } else {
+                    else
                         unlink($dir . DIRECTORY_SEPARATOR . $object);
-                    }
                 }
             }
             rmdir($dir);
