@@ -27,7 +27,7 @@ class RouteParamsTest extends TestCase
         file_put_contents($filePath, $code);
 
         $core = new Core();
-        $yaml = $core->generate([dirname($filePath)]);
+        $yaml = $core->generateYaml([dirname($filePath)]);
         unlink($filePath);
 
         $this->assertStringContainsString("name: id", $yaml);
@@ -67,7 +67,7 @@ class RouteParamsTest extends TestCase
         file_put_contents($filePath, $code);
 
         $core = new Core();
-        $yaml = $core->generate([dirname($filePath)]);
+        $yaml = $core->generateYaml([dirname($filePath)]);
         unlink($filePath);
 
         $this->assertStringContainsString("requestBody:", $yaml);
@@ -94,7 +94,7 @@ class RouteParamsTest extends TestCase
         file_put_contents($filePath, $code);
 
         $core = new Core();
-        $yaml = $core->generate([dirname($filePath)]);
+        $yaml = $core->generateYaml([dirname($filePath)]);
         unlink($filePath);
 
         // id should be in path
@@ -123,7 +123,7 @@ class RouteParamsTest extends TestCase
         file_put_contents($filePath, $code);
 
         $core = new Core();
-        $yaml = $core->generate([dirname($filePath)]);
+        $yaml = $core->generateYaml([dirname($filePath)]);
         unlink($filePath);
 
         $this->assertStringContainsString("name: sort", $yaml);

@@ -7,22 +7,22 @@ A framework-agnostic PHP Swagger/OpenAPI generator that uses static analysis (AS
 - **AST-based Static Analysis**: No need to run your application.
 - **Modern PHP Support**: Handles namespaces, use aliases, and complex types.
 - **Auto-inference**: Automatically resolve route parameters and request bodies from method signatures.
-- **Advanced Type Resolution**:
+- **Advanced Type Resolution & Validation** (inspired by `swaggo`):
     - Primitives: `int`, `string`, `bool`, `float`.
     - Nullable types: `?string` or `string|null`.
     - Array types: `User[]` or `array<User>`.
-    - Class references: Automatically resolves FQCN and creates schemas.
+    - **Validation**: Support `@minimum`, `@maximum`, `@minLength`, `@maxLength`, `@pattern`, `@format`, `@example` in PHPDoc.
+- **Global Metadata & Security**:
+    - **Global Info**: Define `@title`, `@version`, `@description`, `@contact.*`, `@license.*`, `@host` in any PHPDoc block.
+    - **Security Schemes**: Define `@securityDefinitions.apikey` and `@securityDefinitions.jwt` globally.
+    - **Endpoint Security**: Apply security with `@security [Name]`.
 - **Advanced OOP Support**:
     - **Inheritance**: Properties from parent classes are automatically merged into child schemas.
     - **Traits**: Supports `use Trait` with property merging.
-    - **Overrides**: Child classes can override parent property types and descriptions.
 - **Powerful Generics**:
     - Supports `@template` in class docblocks.
     - Handles nested generics like `ApiResponse<Collection<User>>`.
-    - Supports generic inheritance (e.g., `class UserResponse extends ApiResponse<User>`).
-    - Uses clean schema naming: `ApiResponse.User`.
-- **OpenAPI 3.0 & 3.1**: Supports both versions, with automatic conversion of nullable types for 3.1.
-- **Schema Registry**: Handles circular references and avoids duplicate definitions.
+- **OpenAPI 3.0 & 3.1**: Supports both versions.
 
 ## Installation
 
@@ -37,47 +37,60 @@ composer require php-swag/php-swag
 use PhpSwag\Core;
 
 $core = new Core();
-$core->setOpenApiVersion('3.1.0'); // Optional, defaults to 3.0.0
-$yaml = $core->generate(['./src/App']);
+$yaml = $core->generateYaml(['./src/App']);
 
 file_put_contents('swagger.yaml', $yaml);
 ```
 
-### Route Parameters Handling
+### Global Configuration
+You can define global API information in a central file (e.g., `index.php` or `Main.php`):
 
-The library supports explicit tags and auto-inference (inspired by swaggo).
+```php
+/**
+ * @title My Awesome API
+ * @version 1.0.0
+ * @description This is a sample server.
+ * @contact.name API Support
+ * @contact.url http://www.swagger.io/support
+ * @contact.email support@swagger.io
+ * @host http://api.example.com
+ *
+ * @securityDefinitions.apikey ApiKeyAuth header X-API-KEY
+ * @securityDefinitions.jwt BearerAuth
+ */
+```
+
+### Route Parameters & Validation
 
 ```php
 /**
  * @route GET /users/{id}
- * @path int $id User unique ID
+ * @summary Get user by ID
+ * @path int $id User unique ID minimum(1)
  * @query string $status Filter by status enum(active,inactive) default(active)
+ * @security ApiKeyAuth
+ * @success 200 User Success response
+ * @failure 404 string Not Found
  */
 public function show(int $id, string $status) {}
 ```
 
-- **Explicit Tags**: `@path`, `@query`, `@header`, `@cookie`, `@body`.
-- **Metadata**: Support `enum(a,b,c)` and `default(value)` in descriptions.
-- **Auto-inference**: If no tags are provided, parameters are inferred from the method signature. Primitive types match path/query, and class types match the request body.
-
 ## Support Tags
 
 - **Endpoints**:
-    - `@route [METHOD] [PATH]` (e.g., `@route POST /data`)
+    - `@route [METHOD] [PATH]`
     - `@summary [TEXT]`
     - `@description [TEXT]`
     - `@tag [NAME]`
-    - `@path [TYPE] $[NAME] [DESC]`
-    - `@query [TYPE] $[NAME] [DESC]`
-    - `@header [TYPE] $[NAME] [DESC]`
-    - `@cookie [TYPE] $[NAME] [DESC]`
-    - `@body [TYPE] [DESC]`
-    - `@response [CODE] [TYPE]` (e.g., `@response 200 ApiResponse<User[]>`)
+    - `@accept [CONTENT_TYPE]` (e.g., `multipart/form-data`)
+    - `@produce [CONTENT_TYPE]` (e.g., `application/xml`)
+    - `@success [CODE] [TYPE] [DESC]`
+    - `@failure [CODE] [TYPE] [DESC]`
+    - `@security [NAME]`
+    - `@path`, `@query`, `@header`, `@cookie`
 - **Models**:
     - `@property [TYPE] $[NAME] [DESCRIPTION]`
-    - `@var [TYPE]` (for class properties)
-    - `@template [NAME]` (for generics)
-    - `@extends [TYPE]` or `@use [TYPE]` (for generic arguments)
+    - **Validation**: `minimum(n)`, `maximum(n)`, `minLength(n)`, `maxLength(n)`, `pattern(regex)`, `format(f)`, `example(v)`, `enum(a,b)`, `default(v)`.
 
 ## Testing
 
@@ -87,21 +100,7 @@ composer install
 ./vendor/bin/phpunit
 ```
 
-To run the example generator:
-```bash
-php examples/generate.php
-```
-
 ### CLI Usage
-You can use the CLI to generate documentation without writing any PHP code:
-
 ```bash
-./vendor/bin/php-swag generate --path src/Controllers --path src/Models --output swagger.yaml
+./vendor/bin/php-swag generate --path src/Controllers --output swagger.yaml
 ```
-
-**Options:**
-- `--path`, `-p`: Path(s) to scan (can be used multiple times).
-- `--output`, `-o`: Output file path (defaults to stdout).
-- `--format`, `-f`: Output format (`yaml` or `json`). Default: `yaml`.
-- `--openapi-version`: OpenAPI version (`3.0.0` or `3.1.0`). Default: `3.0.0`.
-- `--filter-unused`: Filter out schemas that are not referenced by any route.

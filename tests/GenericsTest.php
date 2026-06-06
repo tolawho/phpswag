@@ -26,7 +26,7 @@ class GenericsTest extends TestCase
         }');
 
         $core = new Core();
-        $yaml = $core->generate([$dir]);
+        $yaml = $core->generateYaml([$dir]);
 
         $this->assertStringContainsString("App_ApiResponse.App_User:", $yaml);
         $this->assertStringContainsString("\$ref: '#/components/schemas/App_User'", $yaml);
@@ -53,7 +53,7 @@ class GenericsTest extends TestCase
         }');
 
         $core = new Core();
-        $yaml = $core->generate([$dir]);
+        $yaml = $core->generateYaml([$dir]);
 
         $this->assertStringContainsString("App_ApiResponse.App_Collection.App_User:", $yaml);
         $this->assertStringContainsString("App_Collection.App_User:", $yaml);
@@ -69,7 +69,7 @@ class GenericsTest extends TestCase
         file_put_contents($dir . '/User.php', '<?php namespace App; class User { /** @var string */ public $name; }');
 
         $core = new Core();
-        $yaml = $core->generate([$dir]);
+        $yaml = $core->generateYaml([$dir]);
 
         $this->assertStringContainsString("App_UserResponse:", $yaml);
         $this->assertStringContainsString("data:", $yaml);

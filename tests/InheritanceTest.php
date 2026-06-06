@@ -16,7 +16,7 @@ class InheritanceTest extends TestCase
         file_put_contents($dir . '/User.php', '<?php namespace App; class User extends Base { /** @var string */ public $name; }');
 
         $core = new Core();
-        $yaml = $core->generate([$dir]);
+        $yaml = $core->generateYaml([$dir]);
 
         $this->assertStringContainsString("App_User:", $yaml);
         $this->assertStringContainsString("id:", $yaml);
@@ -32,7 +32,7 @@ class InheritanceTest extends TestCase
         file_put_contents($dir . '/Post.php', '<?php namespace App; class Post { use Timestampable; /** @var string */ public $title; }');
 
         $core = new Core();
-        $yaml = $core->generate([$dir]);
+        $yaml = $core->generateYaml([$dir]);
 
         $this->assertStringContainsString("App_Post:", $yaml);
         $this->assertStringContainsString("createdAt:", $yaml);
@@ -48,7 +48,7 @@ class InheritanceTest extends TestCase
         file_put_contents($dir . '/Child.php', '<?php namespace App; class Child extends Base { /** @var int */ public $type = 1; }');
 
         $core = new Core();
-        $yaml = $core->generate([$dir]);
+        $yaml = $core->generateYaml([$dir]);
 
         $this->assertStringContainsString("App_Child:", $yaml);
         $this->assertStringContainsString("type:\n          type: integer", $yaml);

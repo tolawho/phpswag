@@ -15,7 +15,7 @@ class OpenApiVersionTest extends TestCase
 
         $core = new Core();
         $core->setOpenApiVersion('3.0.0');
-        $yaml = $core->generate([$dir]);
+        $yaml = $core->generateYaml([$dir]);
 
         $this->assertStringContainsString("nullable: true", $yaml);
     }
@@ -28,7 +28,7 @@ class OpenApiVersionTest extends TestCase
 
         $core = new Core();
         $core->setOpenApiVersion('3.1.0');
-        $yaml = $core->generate([$dir]);
+        $yaml = $core->generateYaml([$dir]);
 
         $this->assertStringNotContainsString("nullable: true", $yaml);
         $this->assertStringContainsString("type:\n            - string\n            - 'null'", $yaml);

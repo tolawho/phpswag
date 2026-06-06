@@ -24,7 +24,7 @@ class RemovalTest extends TestCase
         file_put_contents($filePath, $code);
 
         $core = new Core();
-        $yaml = $core->generate([dirname($filePath)]);
+        $yaml = $core->generateYaml([dirname($filePath)]);
         unlink($filePath);
 
         $this->assertStringNotContainsString("name: legacy", $yaml);
@@ -48,7 +48,7 @@ class RemovalTest extends TestCase
         file_put_contents($filePath, $code);
 
         $core = new Core();
-        $yaml = $core->generate([dirname($filePath)]);
+        $yaml = $core->generateYaml([dirname($filePath)]);
         unlink($filePath);
 
         $this->assertStringNotContainsString("requestBody:", $yaml);
