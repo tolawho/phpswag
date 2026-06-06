@@ -24,6 +24,8 @@ class Core
     /** @var array<string, array{node: Class_|Trait_, nameResolver: NameResolver}> */
     private array $discoveredClasses = [];
 
+    private bool $isAnalyzed = false;
+
     public function __construct()
     {
         $this->scanner = new Scanner();
@@ -43,8 +45,12 @@ class Core
         $this->generator->setFilterUnusedSchemas($filter);
     }
 
-    public function generate(array $paths): string
+    private function analyze(array $paths): void
     {
+        if ($this->isAnalyzed) {
+            return;
+        }
+
         $this->scanner->setPaths($paths);
         $files = $this->scanner->scan();
 
@@ -58,7 +64,25 @@ class Core
             $this->analyzeClass($fqcn, $data['node'], $data['nameResolver']);
         }
 
+        $this->isAnalyzed = true;
+    }
+
+    public function generate(array $paths): string
+    {
+        $this->analyze($paths);
         return $this->generator->generateYaml();
+    }
+
+    public function generateYaml(array $paths): string
+    {
+        $this->analyze($paths);
+        return $this->generator->generateYaml();
+    }
+
+    public function generateJson(array $paths): string
+    {
+        $this->analyze($paths);
+        return $this->generator->generateJson();
     }
 
     private function discoverFile(string $filePath): void

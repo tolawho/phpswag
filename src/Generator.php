@@ -36,6 +36,16 @@ class Generator
 
     public function generateYaml(): string
     {
+        return Yaml::dump($this->generateSpec(), 10, 2, Yaml::DUMP_NUMERIC_KEY_AS_STRING);
+    }
+
+    public function generateJson(): string
+    {
+        return json_encode($this->generateSpec(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    }
+
+    public function generateSpec(): array
+    {
         $spec = [
             'openapi' => $this->openApiVersion,
             'info' => [
@@ -135,7 +145,7 @@ class Generator
             ];
         }
 
-        return Yaml::dump($spec, 10, 2, Yaml::DUMP_NUMERIC_KEY_AS_STRING);
+        return $spec;
     }
 
     private function processSchemaOutput(array $schema, ?string $description = null): array

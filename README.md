@@ -113,3 +113,17 @@ To run the example generator:
 ```bash
 php examples/generate.php
 ```
+
+### CLI Usage
+You can use the CLI to generate documentation without writing any PHP code:
+
+```bash
+./vendor/bin/php-swag generate --path src/Controllers --path src/Models --output swagger.yaml
+```
+
+**Options:**
+- `--path`, `-p`: Path(s) to scan (can be used multiple times).
+- `--output`, `-o`: Output file path (defaults to stdout).
+- `--format`, `-f`: Output format (`yaml` or `json`). Default: `yaml`.
+- `--openapi-version`: OpenAPI version (`3.0.0` or `3.1.0`). Default: `3.0.0`.
+- `--filter-unused`: Filter out schemas that are not referenced by any route.
