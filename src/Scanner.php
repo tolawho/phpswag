@@ -30,17 +30,29 @@ class Scanner
             return [];
         }
 
-        $finder = new Finder();
-        $finder->files()
-            ->in($this->paths)
-            ->name('*.php')
-            ->exclude($this->excludedPaths);
-
         $files = [];
-        foreach ($finder as $file) {
-            $files[] = $file->getRealPath();
+        $dirs = [];
+
+        foreach ($this->paths as $path) {
+            if (is_file($path)) {
+                $files[] = realpath($path);
+            } elseif (is_dir($path)) {
+                $dirs[] = $path;
+            }
         }
 
-        return $files;
+        if (!empty($dirs)) {
+            $finder = new Finder();
+            $finder->files()
+                ->in($dirs)
+                ->name('*.php')
+                ->exclude($this->excludedPaths);
+
+            foreach ($finder as $file) {
+                $files[] = $file->getRealPath();
+            }
+        }
+
+        return array_unique($files);
     }
 }
