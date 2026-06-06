@@ -135,7 +135,7 @@ class Generator
             ];
         }
 
-        return Yaml::dump($spec, 10, 2);
+        return Yaml::dump($spec, 10, 2, Yaml::DUMP_NUMERIC_KEY_AS_STRING);
     }
 
     private function processSchemaOutput(array $schema, ?string $description = null): array
