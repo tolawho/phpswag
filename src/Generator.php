@@ -2,10 +2,9 @@
 
 namespace PhpSwag;
 
-use Symfony\Component\Yaml\Yaml;
 use PhpSwag\IR\RouteDefinition;
 use PhpSwag\IR\SchemaDefinition;
-use PhpSwag\IR\PropertyDefinition;
+use Symfony\Component\Yaml\Yaml;
 
 class Generator
 {
@@ -82,16 +81,30 @@ class Generator
             if (!empty($route->parameters)) {
                 $routeSpec['parameters'] = [];
                 foreach ($route->parameters as $param) {
-                    $in = 'query';
-                    if (strpos($path, '{' . $param['name'] . '}') !== false) {
-                        $in = 'path';
+                    if (isset($param['in'])) {
+                        $in = $param['in'];
+                    } else {
+                        $in = 'query';
+                        if (strpos($path, '{' . $param['name'] . '}') !== false) {
+                            $in = 'path';
+                        }
+                    }
+
+                    $schema = $this->processSchemaOutput($param['schema']);
+
+                    // Handle enum and default from extra metadata if present
+                    if (isset($param['enum'])) {
+                        $schema['enum'] = $param['enum'];
+                    }
+                    if (isset($param['default'])) {
+                        $schema['default'] = $param['default'];
                     }
 
                     $paramSpec = [
                         'name' => $param['name'],
                         'in' => $in,
-                        'required' => $in === 'path',
-                        'schema' => $this->processSchemaOutput($param['schema'])
+                        'required' => ($in === 'path' || (isset($param['required']) && $param['required'])),
+                        'schema' => $schema
                     ];
 
                     if (!empty($param['description'])) {
@@ -99,6 +112,20 @@ class Generator
                     }
 
                     $routeSpec['parameters'][] = $paramSpec;
+                }
+            }
+
+            if ($route->requestBody) {
+                $routeSpec['requestBody'] = [
+                    'required' => true,
+                    'content' => [
+                        'application/json' => [
+                            'schema' => $this->processSchemaOutput($route->requestBody['schema'])
+                        ]
+                    ]
+                ];
+                if (!empty($route->requestBody['description'])) {
+                    $routeSpec['requestBody']['description'] = $route->requestBody['description'];
                 }
             }
 
@@ -262,6 +289,9 @@ class Generator
             foreach ($route->parameters as $param) {
                 $this->collectFqcnsFromSchema($param['schema'], $usedFqcns);
             }
+            if ($route->requestBody) {
+                $this->collectFqcnsFromSchema($route->requestBody['schema'], $usedFqcns);
+            }
         }
 
         $usedSchemas = [];
@@ -283,10 +313,6 @@ class Generator
                     $propSchema = $this->applyTypeArguments($prop->schema, $schema->typeArguments);
                     $this->collectFqcnsFromSchema($propSchema, $usedFqcns);
                 }
-
-                // Parent and traits are NOT included in $usedFqcns automatically
-                // because we flatten them. Only include them if they are explicitly
-                // referenced via $ref in some property or response.
             }
         }
 
@@ -300,8 +326,6 @@ class Generator
             $prefix = '#/components/schemas/';
             if (strpos($ref, $prefix) === 0) {
                 $schemaId = substr($ref, strlen($prefix));
-                // We need to find the FQCN by schema ID.
-                // Let's optimize this by looking at all registered schemas.
                 foreach ($this->schemaRegistry->getAll() as $s) {
                     if ($this->schemaRegistry->getSchemaId($s->name) === $schemaId) {
                         $usedFqcns[] = $s->name;

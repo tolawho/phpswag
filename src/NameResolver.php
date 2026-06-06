@@ -43,6 +43,12 @@ class NameResolver extends NodeVisitorAbstract
             return $name;
         }
 
+        // If the name already starts with the current namespace, treat it as already resolved.
+        // This is a heuristic for our static analysis tool to avoid double-resolution.
+        if (str_starts_with($name, $this->currentNamespace . '\\')) {
+            return $name;
+        }
+
         return $this->currentNamespace . '\\' . $name;
     }
 
