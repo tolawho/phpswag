@@ -105,3 +105,49 @@
 - [x] **[S4.5.1] Operation ID Support:** Cho phép đặt tên thủ công cho operation qua tag @operationId.
 - [x] **[S4.5.2] Deprecation Support:** Đánh dấu operation lỗi thời thông qua tag @deprecated.
 - [x] **[S4.5.3] x- Extension Support:** Hỗ trợ trích xuất và xuất các extension OpenAPI tùy chỉnh bắt đầu bằng "x-".
+
+### [Epic 5] Developer Experience & Modern PHP Support
+- **Trạng thái:** To Do
+- **Chủ sở hữu:** Fullstack Developer (User)
+- **Tóm tắt:** Tập trung vào việc tối ưu hóa quy trình viết code, tận dụng các tính năng hiện đại của PHP (Enums, Attributes-like inference) và cung cấp thông báo lỗi minh bạch.
+- **Giả thuyết Lợi ích (Benefit Hypothesis):** Giảm thiểu mã lặp lại, tận dụng tối đa sức mạnh của ngôn ngữ PHP hiện đại và giúp lập trình viên phát hiện lỗi cấu hình API ngay lập tức, từ đó tăng tốc độ phát triển.
+- **Tiêu chí chấp nhận (Acceptance Criteria):**
+  - Hỗ trợ khai báo metadata ở cấp Controller (Class).
+  - Tự động suy luận các thuộc tính bắt buộc (required) mà không cần khai báo thủ công.
+  - Tích hợp sâu với Native Enums (PHP 8.1+).
+  - Cung cấp cơ chế mapping thông minh cho các kiểu dữ liệu phổ biến (DateTime, UUID).
+  - Thông báo lỗi chi tiết kèm vị trí file/dòng code.
+
+## 2. Program Backlog (Features) (Tiếp theo)
+
+### Features cho [Epic 5] Developer Experience
+- [ ] **[F5.1] Controller-level Metadata Support:** Hỗ trợ @tag, @security, @accept, @produce ở cấp Class.
+- [ ] **[F5.2] Enhanced Diagnostics & Error Reporting:** Cải thiện thông báo lỗi với đầy đủ thông tin ngữ cảnh (file, line).
+- [ ] **[F5.3] Intelligent Schema Inference:** Tự động xác định `required` fields dựa trên type-hint và giá trị mặc định.
+- [ ] **[F5.4] Native PHP Enum Support:** Tự động trích xuất các case từ PHP 8.1+ Enums.
+- [ ] **[F5.5] Smart Type Mapping Registry:** Map các class phổ biến (DateTime, Uuid, UploadedFile) sang kiểu dữ liệu OpenAPI tương ứng.
+
+## 3. Team Backlog (User Stories) (Tiếp theo)
+
+### Stories cho [F5.1] Controller-level Metadata
+- [ ] **[S5.1.1] Class-level Tag Collection:** Thu thập @tag từ class docblock và gộp với tags ở method.
+- [ ] **[S5.1.2] Class-level Security & Content-Type:** Áp dụng @security, @accept, @produce từ class làm mặc định cho tất cả method bên trong, cho phép method ghi đè.
+
+### Stories cho [F5.2] Enhanced Diagnostics
+- [ ] **[S5.2.1] Source Location Tracking:** Lưu trữ thông tin file và dòng code trong quá trình parse.
+- [ ] **[S5.2.2] User-Friendly Error Messages:** Hiển thị lỗi chi tiết khi không phân giải được class hoặc tag sai cú pháp.
+
+### Stories cho [F5.3] Intelligent Schema Inference
+- [ ] **[S5.3.1] Nullable-based Required Detection:** Tự động đánh dấu `required: true` nếu type-hint không nullable.
+- [ ] **[S5.3.2] Default Value Inference:** Thuộc tính có giá trị mặc định được coi là optional.
+- [ ] **[S5.3.3] Explicit @required Tag:** Hỗ trợ tag @required để ghi đè logic suy luận.
+
+### Stories cho [F5.4] Native PHP Enum Support
+- [ ] **[S5.4.1] Enum Detection logic:** Nhận diện class là Enum thông qua Reflection.
+- [ ] **[S5.4.2] BackedEnum Value Extraction:** Tự động lấy `value` cho BackedEnum (string/int).
+- [ ] **[S5.4.3] UnitEnum Name Extraction:** Tự động lấy `name` cho UnitEnum.
+
+### Stories cho [F5.5] Smart Type Mapping
+- [ ] **[S5.5.1] Built-in Date/Time Mapping:** Map `DateTimeInterface` sang `string/date-time`.
+- [ ] **[S5.5.2] External Library Support (Optional):** Hỗ trợ mapping cho Uuid (Ramsey/Symfony) nếu class tồn tại.
+- [ ] **[S5.5.3] Binary/File Mapping:** Map các class UploadedFile phổ biến sang `string/binary`.
