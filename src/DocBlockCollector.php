@@ -32,7 +32,7 @@ class DocBlockCollector
                 continue;
             }
 
-            if (preg_match('/^(@[a-zA-Z0-9_.]+)(?:\s+(.*))?$/', $line, $matches)) {
+            if (preg_match('/^(@[a-zA-Z0-9_.-]+)(?:\s+(.*))?$/', $line, $matches)) {
                 $tagName = $matches[1];
                 $value = isset($matches[2]) ? trim($matches[2]) : '';
 
@@ -76,7 +76,7 @@ class DocBlockCollector
                     }
                 } elseif ($tagName === '@body') {
                     // @body [Type] [Description]
-                    if (preg_match('/^([a-zA-Z0-9_\\<>|\[\]]+)(?:\s+(.*))?$/', $value, $m)) {
+                    if (preg_match('/^([a-zA-Z0-9_\\\\<>|\[\]]+)(?:\s+(.*))?$/', $value, $m)) {
                         $typeString = $m[1];
                         $desc = isset($m[2]) ? $m[2] : '';
 

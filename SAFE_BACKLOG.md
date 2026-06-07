@@ -65,15 +65,15 @@
 ### Features cho [Epic 3] Integration & CLI
 - [x] **[F3.1] CLI Command Interface:** Cung cấp giao diện dòng lệnh cho người dùng.
 - [x] **[F3.2] OpenAPI Spec Generator:** Chuyển đổi dữ liệu IR thành file chuẩn OpenAPI.
-- [ ] **[F3.3] Performance Caching:** Lưu trữ kết quả phân tích để tăng tốc cho các lần chạy sau.
+- [x] **[F3.3] Performance Caching:** Lưu trữ kết quả phân tích để tăng tốc cho các lần chạy sau.
 - [x] **[F3.4] README & Documentation:** Hướng dẫn cộng đồng cách sử dụng và đóng góp.
 
 ### Features cho [Epic 4] Professional API Documentation
 - [x] **[F4.1] Global API Metadata Discovery:** Tự động trích xuất @title, @version, @description, @contact.*, @license.*, và @host từ toàn bộ project.
 - [x] **[F4.2] Security & Authentication Support:** Định nghĩa @securityDefinitions (ApiKey/JWT) toàn cục và @security cho endpoint.
 - [x] **[F4.3] Comprehensive Schema Validation:** Hỗ trợ các tag @minimum, @maximum, @minLength, @maxLength, @pattern, @format, @example cho Model properties và Route parameters.
-- [ ] **[F4.4] MIME Types & Response Alias:** Hỗ trợ @accept, @produce (mặc định application/json) và alias @success/@failure.
-- [ ] **[F4.5] Advanced Operation Metadata:** Hỗ trợ @operationId, @deprecated và OpenAPI Extensions (x-).
+- [x] **[F4.4] MIME Types & Response Alias:** Hỗ trợ @accept, @produce (mặc định application/json) và alias @success/@failure.
+- [x] **[F4.5] Advanced Operation Metadata:** Hỗ trợ @operationId, @deprecated và OpenAPI Extensions (x-).
 
 ## 3. Team Backlog (User Stories)
 
@@ -98,10 +98,10 @@
 - [x] **[S4.3.3] Example Tag Support:** Hỗ trợ tag @example để hiển thị dữ liệu mẫu trong UI.
 
 ### Stories cho [F4.4] MIME Types & Response Alias
-- [ ] **[S4.4.1] MIME Type Tags (@accept, @produce):** Cho phép định nghĩa kiểu nội dung cho request/response.
-- [ ] **[S4.4.2] Success/Failure Aliases:** Xử lý @success và @failure như các alias của @response để tăng tính trực quan.
+- [x] **[S4.4.1] MIME Type Tags (@accept, @produce):** Cho phép định nghĩa kiểu nội dung cho request/response.
+- [x] **[S4.4.2] Success/Failure Aliases:** Xử lý @success và @failure như các alias của @response để tăng tính trực quan.
 
 ### Stories cho [F4.5] Advanced Operation Metadata
-- [ ] **[S4.5.1] Operation ID Support:** Cho phép đặt tên thủ công cho operation qua tag @operationId.
-- [ ] **[S4.5.2] Deprecation Support:** Đánh dấu operation lỗi thời thông qua tag @deprecated.
-- [ ] **[S4.5.3] x- Extension Support:** Hỗ trợ trích xuất và xuất các extension OpenAPI tùy chỉnh bắt đầu bằng "x-".
+- [x] **[S4.5.1] Operation ID Support:** Cho phép đặt tên thủ công cho operation qua tag @operationId.
+- [x] **[S4.5.2] Deprecation Support:** Đánh dấu operation lỗi thời thông qua tag @deprecated.
+- [x] **[S4.5.3] x- Extension Support:** Hỗ trợ trích xuất và xuất các extension OpenAPI tùy chỉnh bắt đầu bằng "x-".
