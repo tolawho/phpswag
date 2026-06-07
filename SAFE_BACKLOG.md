@@ -70,7 +70,7 @@
 
 ### Features cho [Epic 4] Professional API Documentation
 - [x] **[F4.1] Global API Metadata Discovery:** Tự động trích xuất @title, @version, @description, @contact.*, @license.*, và @host từ toàn bộ project.
-- [ ] **[F4.2] Security & Authentication Support:** Định nghĩa @securityDefinitions (ApiKey/JWT) toàn cục và @security cho endpoint.
+- [x] **[F4.2] Security & Authentication Support:** Định nghĩa @securityDefinitions (ApiKey/JWT) toàn cục và @security cho endpoint.
 - [ ] **[F4.3] Comprehensive Schema Validation:** Hỗ trợ các tag @minimum, @maximum, @minLength, @maxLength, @pattern, @format, @example cho Model properties và Route parameters.
 - [ ] **[F4.4] MIME Types & Response Alias:** Hỗ trợ @accept, @produce (mặc định application/json) và alias @success/@failure.
 - [ ] **[F4.5] Advanced Operation Metadata:** Hỗ trợ @operationId, @deprecated và OpenAPI Extensions (x-).
@@ -89,8 +89,8 @@
 - [x] **[S4.1.3] Host & BasePath Support:** Xử lý tag @host để xác định URL cơ sở.
 
 ### Stories cho [F4.2] Security & Authentication
-- [ ] **[S4.2.1] Security Definitions Parser:** Phân tích các định nghĩa bảo mật (API Key, Bearer JWT) từ PHPDoc.
-- [ ] **[S4.2.2] Security Requirement Tag:** Áp dụng tag @security cho từng endpoint để chỉ định phương thức bảo mật cần thiết.
+- [x] **[S4.2.1] Security Definitions Parser:** Phân tích các định nghĩa bảo mật (API Key, Bearer JWT) từ PHPDoc.
+- [x] **[S4.2.2] Security Requirement Tag:** Áp dụng tag @security cho từng endpoint để chỉ định phương thức bảo mật cần thiết.
 
 ### Stories cho [F4.3] Comprehensive Schema Validation
 - [ ] **[S4.3.1] Validation Tag Extraction:** Trích xuất các ràng buộc (minimum, maxLength, pattern, format, etc.) từ mô tả PHPDoc hoặc tag riêng biệt.

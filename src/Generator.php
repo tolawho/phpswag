@@ -18,6 +18,8 @@ class Generator
     private ?array $contact = null;
     private ?array $license = null;
     private array $servers = [];
+    private array $securitySchemes = [];
+    private array $globalSecurity = [];
 
     public function __construct(SchemaRegistry $schemaRegistry)
     {
@@ -64,6 +66,16 @@ class Generator
         $this->servers = $servers;
     }
 
+    public function setSecuritySchemes(array $schemes): void
+    {
+        $this->securitySchemes = $schemes;
+    }
+
+    public function setGlobalSecurity(array $security): void
+    {
+        $this->globalSecurity = $security;
+    }
+
     public function addRoute(RouteDefinition $route): void
     {
         $this->routes[] = $route;
@@ -71,7 +83,7 @@ class Generator
 
     public function generateYaml(): string
     {
-        return Yaml::dump($this->generateSpec(), 10, 2, Yaml::DUMP_NUMERIC_KEY_AS_STRING);
+        return Yaml::dump($this->generateSpec(), 10, 2);
     }
 
     public function generateJson(): string
@@ -79,41 +91,44 @@ class Generator
         return json_encode($this->generateSpec(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     }
 
-    public function generateSpec(): array
+    private function generateSpec(): array
     {
-        $info = [
-            'title' => $this->title,
-            'version' => $this->apiVersion,
-        ];
-
-        if ($this->description !== null) {
-            $info['description'] = $this->description;
-        }
-
-        if ($this->contact !== null) {
-            $info['contact'] = $this->contact;
-        }
-
-        if ($this->license !== null) {
-            $info['license'] = $this->license;
-        }
-
         $spec = [
             'openapi' => $this->openApiVersion,
-            'info' => $info,
+            'info' => [
+                'title' => $this->title,
+                'version' => $this->apiVersion,
+            ],
             'paths' => [],
             'components' => [
                 'schemas' => []
             ]
         ];
 
+        if ($this->description) {
+            $spec['info']['description'] = $this->description;
+        }
+        if ($this->contact) {
+            $spec['info']['contact'] = $this->contact;
+        }
+        if ($this->license) {
+            $spec['info']['license'] = $this->license;
+        }
         if (!empty($this->servers)) {
             $spec['servers'] = $this->servers;
         }
 
+        if (!empty($this->securitySchemes)) {
+            $spec['components']['securitySchemes'] = $this->securitySchemes;
+        }
+
+        if (!empty($this->globalSecurity)) {
+            $spec['security'] = $this->globalSecurity;
+        }
+
         foreach ($this->routes as $route) {
-            $path = $route->path;
             $method = strtolower($route->method);
+            $path = $route->path;
 
             if (!isset($spec['paths'][$path])) {
                 $spec['paths'][$path] = [];
@@ -130,6 +145,10 @@ class Generator
 
             if (!empty($route->tags)) {
                 $routeSpec['tags'] = $route->tags;
+            }
+
+            if (!empty($route->security)) {
+                $routeSpec['security'] = $route->security;
             }
 
             if (!empty($route->parameters)) {
