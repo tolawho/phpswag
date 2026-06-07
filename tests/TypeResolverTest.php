@@ -47,6 +47,7 @@ class TypeResolverTest extends TestCase
         $this->assertEquals(['type' => 'string', 'nullable' => true], $resolved);
 
         $doc = '/** @var User[] */';
+        $registry->register(new \PhpSwag\IR\SchemaDefinition('User'));
         $node = $parser->parse($doc);
         $varTag = $node->getVarTagValues()[0];
         $resolved = $typeResolver->resolve($varTag->type);

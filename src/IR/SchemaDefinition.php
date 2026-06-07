@@ -17,7 +17,9 @@ class SchemaDefinition
         public array $traits = [],
         public array $templates = [], // e.g. ['T', 'K']
         public array $typeArguments = [], // e.g. ['T' => ['type' => 'string']]
-        public ?string $base = null
+        public ?string $base = null,
+        public ?string $file = null,
+        public ?int $line = null
     ) {
     }
 }

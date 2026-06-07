@@ -122,7 +122,7 @@
 
 ### Features cho [Epic 5] Developer Experience
 - [x] **[F5.1] Controller-level Metadata Support:** Hỗ trợ @tag, @security, @accept, @produce ở cấp Class.
-- [ ] **[F5.2] Enhanced Diagnostics & Error Reporting:** Cải thiện thông báo lỗi với đầy đủ thông tin ngữ cảnh (file, line).
+- [x] **[F5.2] Enhanced Diagnostics & Error Reporting:** Cải thiện thông báo lỗi với đầy đủ thông tin ngữ cảnh (file, line).
 - [ ] **[F5.3] Intelligent Schema Inference:** Tự động xác định `required` fields dựa trên type-hint và giá trị mặc định.
 - [ ] **[F5.4] Native PHP Enum Support:** Tự động trích xuất các case từ PHP 8.1+ Enums.
 - [ ] **[F5.5] Smart Type Mapping Registry:** Map các class phổ biến (DateTime, Uuid, UploadedFile) sang kiểu dữ liệu OpenAPI tương ứng.
@@ -134,8 +134,8 @@
 - [x] **[S5.1.2] Class-level Security & Content-Type:** Áp dụng @security, @accept, @produce từ class làm mặc định cho tất cả method bên trong, cho phép method ghi đè.
 
 ### Stories cho [F5.2] Enhanced Diagnostics
-- [ ] **[S5.2.1] Source Location Tracking:** Lưu trữ thông tin file và dòng code trong quá trình parse.
-- [ ] **[S5.2.2] User-Friendly Error Messages:** Hiển thị lỗi chi tiết khi không phân giải được class hoặc tag sai cú pháp.
+- [x] **[S5.2.1] Source Location Tracking:** Lưu trữ thông tin file và dòng code trong quá trình parse.
+- [x] **[S5.2.2] User-Friendly Error Messages:** Hiển thị lỗi chi tiết khi không phân giải được class hoặc tag sai cú pháp.
 
 ### Stories cho [F5.3] Intelligent Schema Inference
 - [ ] **[S5.3.1] Nullable-based Required Detection:** Tự động đánh dấu `required: true` nếu type-hint không nullable.

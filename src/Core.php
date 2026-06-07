@@ -263,7 +263,8 @@ class Core
         foreach ($tokens as $token) {
             if (is_array($token) && $token[0] === T_DOC_COMMENT) {
                 $docComment = $token[1];
-                $tags = $this->docCollector->collectTags($docComment);
+                $startLine = $token[2];
+                $tags = $this->docCollector->collectTags($docComment, $startLine, $filePath);
 
                 $isGlobalBlock = false;
                 $hasRouteOrProperty = false;
@@ -318,13 +319,30 @@ class Core
                                 'in' => $matches[2],
                                 'name' => $matches[3]
                             ];
+                        } else {
+                            throw new \PhpSwag\Exception\DiagnosticException(sprintf(
+                                "Invalid syntax for tag '@securityDefinitions.apikey' in %s%s: "
+                                . "expected format is '@securityDefinitions.apikey NAME IN KEY', got '%s'",
+                                $tag['file'] ?? $filePath,
+                                isset($tag['line']) ? " on line " . $tag['line'] : "",
+                                $tag['value']
+                            ));
                         }
                     } elseif ($tagName === '@securityDefinitions.jwt') {
-                        $this->securitySchemes[$tag['value']] = [
-                            'type' => 'http',
-                            'scheme' => 'bearer',
-                            'bearerFormat' => 'JWT'
-                        ];
+                        if (trim($tag['value']) !== '') {
+                            $this->securitySchemes[$tag['value']] = [
+                                'type' => 'http',
+                                'scheme' => 'bearer',
+                                'bearerFormat' => 'JWT'
+                            ];
+                        } else {
+                            throw new \PhpSwag\Exception\DiagnosticException(sprintf(
+                                "Invalid syntax for tag '@securityDefinitions.jwt' in %s%s: "
+                                . "expected format is '@securityDefinitions.jwt NAME', got empty value",
+                                $tag['file'] ?? $filePath,
+                                isset($tag['line']) ? " on line " . $tag['line'] : ""
+                            ));
+                        }
                     } elseif ($tagName === '@security') {
                         $this->globalSecurity = array_merge(
                             $this->globalSecurity,
@@ -332,7 +350,7 @@ class Core
                         );
                     } elseif ($tagName === '@tag.name') {
                         $parts = preg_split('/\s+/', $tag['value'], 2);
-                        if (is_array($parts) && isset($parts[0])) {
+                        if (is_array($parts) && isset($parts[0]) && trim($parts[0]) !== '') {
                             $name = $parts[0];
                             $desc = isset($parts[1]) ? trim($parts[1]) : null;
 
@@ -341,6 +359,14 @@ class Core
                                 $tagData['description'] = $desc;
                             }
                             $this->globalTags[$name] = $tagData;
+                        } else {
+                            throw new \PhpSwag\Exception\DiagnosticException(sprintf(
+                                "Invalid syntax for tag '@tag.name' in %s%s: "
+                                . "expected format is '@tag.name NAME [description]', got '%s'",
+                                $tag['file'] ?? $filePath,
+                                isset($tag['line']) ? " on line " . $tag['line'] : "",
+                                $tag['value']
+                            ));
                         }
                     }
                 }
@@ -480,7 +506,8 @@ class Core
             $parent = null;
 
             $docComment = $stmt->getDocComment()?->getText() ?? '';
-            $tags = $this->docCollector->collectTags($docComment);
+            $docStartLine = $stmt->getDocComment()?->getStartLine();
+            $tags = $this->docCollector->collectTags($docComment, $docStartLine, $this->currentlyAnalyzingFile);
             foreach ($tags as $tag) {
                 if ($tag['name'] === '@template') {
                     $templates[] = $tag['value'];
@@ -514,7 +541,9 @@ class Core
                 parent: $parent,
                 traits: $traits,
                 templates: $templates,
-                typeArguments: $typeArguments
+                typeArguments: $typeArguments,
+                file: $this->currentlyAnalyzingFile,
+                line: $stmt->getStartLine()
             ));
         }
     }
@@ -524,7 +553,8 @@ class Core
         $schema = $this->schemaRegistry->get($fqcn);
         $typeResolver = new TypeResolver($this->schemaRegistry, $nameResolver, $schema->templates);
         $docComment = $stmt->getDocComment()?->getText() ?? '';
-        $tags = $this->docCollector->collectTags($docComment);
+        $docStartLine = $stmt->getDocComment()?->getStartLine();
+        $tags = $this->docCollector->collectTags($docComment, $docStartLine, $this->currentlyAnalyzingFile);
 
         $classTags = [];
         $classSecurity = [];
@@ -540,7 +570,11 @@ class Core
                     if ($targetSchema && !empty($targetSchema->templates)) {
                         foreach ($typeNode->genericTypes as $i => $argNode) {
                             $templateName = $targetSchema->templates[$i] ?? "T$i";
-                            $schema->typeArguments[$templateName] = $typeResolver->resolve($argNode);
+                            $schema->typeArguments[$templateName] = $typeResolver->resolve(
+                                $argNode,
+                                $tag['line'] ?? $docStartLine,
+                                $this->currentlyAnalyzingFile
+                            );
                         }
                     }
                 }
@@ -562,20 +596,26 @@ class Core
         foreach ($tags as $tag) {
             if ($tag['name'] === '@property' && isset($tag['type'])) {
                 $isSchema = true;
-                $propertySchema = $typeResolver->resolve($tag['type']);
+                $propertySchema = $typeResolver->resolve(
+                    $tag['type'],
+                    $tag['line'] ?? $docStartLine,
+                    $this->currentlyAnalyzingFile
+                );
 
                 $desc = is_array($tag['description'])
                     ? ($tag['description']['description'] ?? null)
                     : ($tag['description'] ?? null);
 
-                                $extra = is_array($tag['description']) ? $tag['description'] : [];
+                $extra = is_array($tag['description']) ? $tag['description'] : [];
                 unset($extra['description']);
 
                 $properties[] = new PropertyDefinition(
                     $tag['propertyName'],
                     $propertySchema,
                     $desc,
-                    $extra
+                    $extra,
+                    $this->currentlyAnalyzingFile,
+                    $tag['line'] ?? $docStartLine
                 );
             }
         }
@@ -584,23 +624,30 @@ class Core
             if ($member instanceof Property) {
                 $isSchema = true;
                 $propDoc = $member->getDocComment()?->getText() ?? '';
-                $propTags = $this->docCollector->collectTags($propDoc);
+                $propStartLine = $member->getDocComment()?->getStartLine();
+                $propTags = $this->docCollector->collectTags($propDoc, $propStartLine, $this->currentlyAnalyzingFile);
                 foreach ($propTags as $pTag) {
                     if ($pTag['name'] === '@var' && isset($pTag['type'])) {
-                        $propertySchema = $typeResolver->resolve($pTag['type']);
+                        $propertySchema = $typeResolver->resolve(
+                            $pTag['type'],
+                            $pTag['line'] ?? $propStartLine,
+                            $this->currentlyAnalyzingFile
+                        );
 
                         $desc = is_array($pTag['description'])
                             ? ($pTag['description']['description'] ?? null)
                             : ($pTag['description'] ?? null);
 
-                                                $extra = is_array($pTag['description']) ? $pTag['description'] : [];
+                        $extra = is_array($pTag['description']) ? $pTag['description'] : [];
                         unset($extra['description']);
 
                         $properties[] = new PropertyDefinition(
                             $member->props[0]->name->toString(),
                             $propertySchema,
                             $desc,
-                            $extra
+                            $extra,
+                            $this->currentlyAnalyzingFile,
+                            $pTag['line'] ?? $propStartLine
                         );
                     }
                 }
@@ -636,7 +683,8 @@ class Core
         ?string $classProduce = null
     ): void {
         $methodDoc = $member->getDocComment()?->getText() ?? '';
-        $tags = $this->docCollector->collectTags($methodDoc);
+        $methodStartLine = $member->getDocComment()?->getStartLine();
+        $tags = $this->docCollector->collectTags($methodDoc, $methodStartLine, $this->currentlyAnalyzingFile);
 
         $routeTag = null;
         $summary = null;
@@ -660,6 +708,13 @@ class Core
             if ($tag['name'] === '@route') {
                 if (preg_match('/^(GET|POST|PUT|DELETE|PATCH)\s+(\S+)/i', $tag['value'], $matches)) {
                     $routeTag = strtoupper($matches[1]) . ' ' . $matches[2];
+                } else {
+                    throw new \PhpSwag\Exception\DiagnosticException(sprintf(
+                        "Invalid syntax for tag '@route' in %s%s: expected format is '@route METHOD PATH', got '%s'",
+                        $tag['file'] ?? $this->currentlyAnalyzingFile ?? 'unknown',
+                        isset($tag['line']) ? " on line " . $tag['line'] : "",
+                        $tag['value']
+                    ));
                 }
             } elseif ($tag['name'] === '@summary') {
                 $summary = $tag['value'];
@@ -705,18 +760,40 @@ class Core
                     }
 
                     $typeNode = $this->docCollector->parseType($typeToParse);
-                    $responses[$code] = $typeResolver->resolve($typeNode);
+                    $responses[$code] = $typeResolver->resolve(
+                        $typeNode,
+                        $tag['line'] ?? $methodStartLine,
+                        $this->currentlyAnalyzingFile
+                    );
                     $responseDescriptions[$code] = $respDesc;
+                } else {
+                    throw new \PhpSwag\Exception\DiagnosticException(sprintf(
+                        "Invalid syntax for tag '%s' in %s%s: "
+                        . "expected format is '%s CODE TYPE [description]', got '%s'",
+                        $tag['name'],
+                        $tag['file'] ?? $this->currentlyAnalyzingFile ?? 'unknown',
+                        isset($tag['line']) ? " on line " . $tag['line'] : "",
+                        $tag['name'],
+                        $tag['value']
+                    ));
                 }
             } elseif (in_array($tag['name'], ['@path', '@query', '@header', '@cookie'])) {
                 $in = substr($tag['name'], 1);
                 $parameters[] = array_merge($tag, [
                     'in' => $in,
-                    'schema' => $typeResolver->resolve($tag['type']),
+                    'schema' => $typeResolver->resolve(
+                        $tag['type'],
+                        $tag['line'] ?? $methodStartLine,
+                        $this->currentlyAnalyzingFile
+                    ),
                     'name' => $tag['propertyName']
                 ]);
             } elseif ($tag['name'] === '@body') {
-                $schema = $typeResolver->resolve($tag['type']);
+                $schema = $typeResolver->resolve(
+                    $tag['type'],
+                    $tag['line'] ?? $methodStartLine,
+                    $this->currentlyAnalyzingFile
+                );
                 $extra = is_array($tag['description']) ? $tag['description'] : [];
                 $desc = $extra['description'] ?? null;
                 unset($extra['description']);
@@ -796,7 +873,11 @@ class Core
                     }
                 }
 
-                $schema = $typeResolver->resolve($this->docCollector->parseType($type));
+                $schema = $typeResolver->resolve(
+                    $this->docCollector->parseType($type),
+                    $param->getStartLine(),
+                    $this->currentlyAnalyzingFile
+                );
 
                 // If it's a class and not primitive, infer as requestBody if not already set
                 $isPrimitive = in_array(ltrim($type, '\\'), ['int', 'string', 'bool', 'float', 'array', 'mixed']);
@@ -836,7 +917,9 @@ class Core
                 produce: $produce,
                 operationId: $operationId,
                 deprecated: $deprecated,
-                extensions: $extensions
+                extensions: $extensions,
+                file: $this->currentlyAnalyzingFile,
+                line: $member->getStartLine()
             ));
         }
     }

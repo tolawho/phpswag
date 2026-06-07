@@ -28,7 +28,9 @@ class RouteDefinition
         public ?string $produce = null,
         public ?string $operationId = null,
         public bool $deprecated = false,
-        public array $extensions = []
+        public array $extensions = [],
+        public ?string $file = null,
+        public ?int $line = null
     ) {
     }
 }
