@@ -25,7 +25,7 @@ class UserController {
 }
 PHP;
 
-        $tempFile = tempnam(sys_get_temp_dir(), 'php-swag-metadata-test');
+        $tempFile = tempnam(sys_get_temp_dir(), 'phpswag-metadata-test');
         file_put_contents($tempFile, $code);
 
         $core = new Core();

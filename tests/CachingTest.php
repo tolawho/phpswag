@@ -22,10 +22,10 @@ class UserController {
 }
 PHP;
 
-        $tempFile = tempnam(sys_get_temp_dir(), 'php-swag-cache-test');
+        $tempFile = tempnam(sys_get_temp_dir(), 'phpswag-cache-test');
         file_put_contents($tempFile, $code);
 
-        $cacheFile = sys_get_temp_dir() . '/php-swag-cache-test-store.dat';
+        $cacheFile = sys_get_temp_dir() . '/phpswag-cache-test-store.dat';
         if (file_exists($cacheFile)) {
             unlink($cacheFile);
         }

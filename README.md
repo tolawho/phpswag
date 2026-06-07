@@ -33,7 +33,7 @@ A framework-agnostic PHP Swagger/OpenAPI generator that uses static analysis (AS
 ## Installation
 
 ```bash
-composer require php-swag/php-swag
+composer require phpswag/phpswag
 ```
 
 ## Usage
@@ -46,7 +46,7 @@ $core = new Core();
 $core->setOpenApiVersion('3.1.0'); // Optional, defaults to 3.0.0
 
 // Optional: Enable caching to speed up consecutive generations
-$core->enableCache('./.php-swag-cache');
+$core->enableCache('./.phpswag-cache');
 
 $yaml = $core->generate(['./src/App']);
 
@@ -382,7 +382,7 @@ php examples/generate.php
 You can use the CLI to generate documentation without writing any PHP code:
 
 ```bash
-./vendor/bin/php-swag generate --path src/Controllers --path src/Models --output swagger.yaml
+./vendor/bin/phpswag generate --path src/Controllers --path src/Models --output swagger.yaml
 ```
 
 **Options:**
@@ -396,4 +396,4 @@ You can use the CLI to generate documentation without writing any PHP code:
 - `--description`: API Description override.
 - `--host`: API Host/Server URL override.
 - `--cache`: Enable performance caching.
-- `--cache-file`: Custom cache file path (default: `./.php-swag-cache`).
+- `--cache-file`: Custom cache file path (default: `./.phpswag-cache`).

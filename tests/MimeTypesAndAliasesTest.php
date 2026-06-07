@@ -43,7 +43,7 @@ class ErrorResponse {
 }
 PHP;
 
-        $tempFile = tempnam(sys_get_temp_dir(), 'php-swag-mimes-test');
+        $tempFile = tempnam(sys_get_temp_dir(), 'phpswag-mimes-test');
         file_put_contents($tempFile, $code);
 
         $core = new Core();

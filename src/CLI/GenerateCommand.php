@@ -27,13 +27,19 @@ class GenerateCommand extends Command
                 'OpenAPI version (3.0.0 or 3.1.0)',
                 '3.0.0'
             )
-            ->addOption('filter-unused', null, InputOption::VALUE_NONE, 'Filter unused schemas')
+            ->addOption(
+                'filter-unused',
+                null,
+                InputOption::VALUE_OPTIONAL,
+                'Filter unused schemas (true or false)',
+                'true'
+            )
             ->addOption('title', null, InputOption::VALUE_REQUIRED, 'API Title')
             ->addOption('api-version', null, InputOption::VALUE_REQUIRED, 'API Version')
             ->addOption('description', null, InputOption::VALUE_REQUIRED, 'API Description')
             ->addOption('host', null, InputOption::VALUE_REQUIRED, 'API Host/Server URL')
             ->addOption('cache', null, InputOption::VALUE_NONE, 'Enable caching to speed up generation')
-            ->addOption('cache-file', null, InputOption::VALUE_REQUIRED, 'Cache file path', './.php-swag-cache');
+            ->addOption('cache-file', null, InputOption::VALUE_REQUIRED, 'Cache file path', './.phpswag-cache');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -46,10 +52,17 @@ class GenerateCommand extends Command
 
         $core = new Core();
         $core->setOpenApiVersion($input->getOption('openapi-version'));
-        $core->setFilterUnusedSchemas($input->getOption('filter-unused'));
+        
+        $filterUnused = $input->getOption('filter-unused');
+        if ($filterUnused === null) {
+            $filterUnused = true;
+        } else {
+            $filterUnused = filter_var($filterUnused, FILTER_VALIDATE_BOOLEAN);
+        }
+        $core->setFilterUnusedSchemas($filterUnused);
 
         if ($input->getOption('cache')) {
-            $core->enableCache($input->getOption('cache-file') ?: './.php-swag-cache');
+            $core->enableCache($input->getOption('cache-file') ?: './.phpswag-cache');
         }
 
         if ($title = $input->getOption('title')) {
