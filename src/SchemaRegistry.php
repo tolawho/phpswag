@@ -38,6 +38,14 @@ class SchemaRegistry
         $this->customSchemaIds[$fqcn] = $id;
     }
 
+    /**
+     * @return array<string, string>
+     */
+    public function getCustomSchemaIds(): array
+    {
+        return $this->customSchemaIds;
+    }
+
     public function getSchemaId(string $fqcn): string
     {
         if (isset($this->customSchemaIds[$fqcn])) {

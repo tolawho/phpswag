@@ -20,11 +20,13 @@ class Core
     private DocBlockCollector $docCollector;
     private Generator $generator;
     private SchemaRegistry $schemaRegistry;
+    private ?Cache\CacheInterface $cache = null;
 
-    /** @var array<string, array{node: Class_|Trait_, nameResolver: NameResolver}> */
+    /** @var array<string, array{node: Class_|Trait_, nameResolver: NameResolver, filePath: string}> */
     private array $discoveredClasses = [];
 
     private bool $isAnalyzed = false;
+    private ?string $currentlyAnalyzingFile = null;
 
     /** @var array<string, mixed> */
     private array $globalMetadata = [];
@@ -95,14 +97,126 @@ class Core
         $this->scanner->setPaths($paths);
         $files = $this->scanner->scan();
 
+        $cachedFilesData = [];
+        $filesToDiscover = [];
+
         foreach ($files as $file) {
+            $hash = md5_file($file);
+            $isCached = $this->cache !== null
+                && ($cached = $this->cache->get($file)) !== null
+                && isset($cached['hash'])
+                && $cached['hash'] === $hash;
+
+            if ($isCached) {
+                $cachedFilesData[$file] = $cached;
+            } else {
+                $filesToDiscover[] = $file;
+            }
+        }
+
+        // 1. Process cached files first
+        foreach ($cachedFilesData as $file => $cached) {
+            // Restore global metadata
+            $this->globalMetadata = array_merge($this->globalMetadata, $cached['globalMetadata']);
+            $this->securitySchemes = array_merge($this->securitySchemes, $cached['securitySchemes']);
+            $this->globalSecurity = array_merge($this->globalSecurity, $cached['globalSecurity']);
+            $this->metadataSources = array_merge($this->metadataSources, $cached['metadataSources']);
+
+            // Restore schemas
+            foreach ($cached['schemas'] as $schema) {
+                $this->schemaRegistry->register($schema);
+            }
+
+            // Restore custom schema IDs
+            foreach ($cached['customSchemaIds'] as $fqcn => $schemaId) {
+                $this->schemaRegistry->setCustomSchemaId($fqcn, $schemaId);
+            }
+
+            // Restore routes
+            foreach ($cached['routes'] as $route) {
+                $this->generator->addRoute($route);
+            }
+        }
+
+        // 2. Discover non-cached files
+        $fileDiscoverResults = [];
+        foreach ($filesToDiscover as $file) {
+            $this->currentlyAnalyzingFile = $file;
+
+            $schemasBefore = $this->schemaRegistry->getAll();
+            $metadataBefore = $this->globalMetadata;
+            $securitySchemesBefore = $this->securitySchemes;
+            $globalSecurityBefore = $this->globalSecurity;
+            $metadataSourcesBefore = $this->metadataSources;
+
             $this->discoverFile($file);
+
+            $schemasAfter = $this->schemaRegistry->getAll();
+            $newSchemas = array_diff_key($schemasAfter, $schemasBefore);
+
+            $newMetadata = array_diff_key($this->globalMetadata, $metadataBefore);
+            $newSecuritySchemes = array_diff_key($this->securitySchemes, $securitySchemesBefore);
+            $newGlobalSecurity = array_slice($this->globalSecurity, count($globalSecurityBefore));
+            $newMetadataSources = array_diff_key($this->metadataSources, $metadataSourcesBefore);
+
+            $fileDiscoverResults[$file] = [
+                'hash' => md5_file($file),
+                'schemas' => $newSchemas,
+                'globalMetadata' => $newMetadata,
+                'securitySchemes' => $newSecuritySchemes,
+                'globalSecurity' => $newGlobalSecurity,
+                'metadataSources' => $newMetadataSources,
+                'customSchemaIds' => [],
+                'routes' => [],
+            ];
+
+            $this->currentlyAnalyzingFile = null;
         }
 
         $this->applyGlobalMetadata();
 
+        // 3. Analyze classes from non-cached files
         foreach ($this->discoveredClasses as $fqcn => $data) {
+            $file = $data['filePath'];
+            $this->currentlyAnalyzingFile = $file;
+
+            $schemasBefore = $this->schemaRegistry->getAll();
+            $customIdsBefore = $this->schemaRegistry->getCustomSchemaIds();
+            $routesCountBefore = count($this->generator->getRoutes());
+
             $this->analyzeClass($fqcn, $data['node'], $data['nameResolver']);
+
+            $schemasAfter = $this->schemaRegistry->getAll();
+            $customIdsAfter = $this->schemaRegistry->getCustomSchemaIds();
+            $routesAfter = $this->generator->getRoutes();
+
+            $newSchemas = array_diff_key($schemasAfter, $schemasBefore);
+            $newCustomIds = array_diff_key($customIdsAfter, $customIdsBefore);
+            $newRoutes = array_slice($routesAfter, $routesCountBefore);
+
+            if (isset($fileDiscoverResults[$file])) {
+                $fileDiscoverResults[$file]['schemas'] = array_merge(
+                    $fileDiscoverResults[$file]['schemas'],
+                    $newSchemas
+                );
+                $fileDiscoverResults[$file]['customSchemaIds'] = array_merge(
+                    $fileDiscoverResults[$file]['customSchemaIds'],
+                    $newCustomIds
+                );
+                $fileDiscoverResults[$file]['routes'] = array_merge(
+                    $fileDiscoverResults[$file]['routes'],
+                    $newRoutes
+                );
+            }
+
+            $this->currentlyAnalyzingFile = null;
+        }
+
+        // 4. Save cache
+        if ($this->cache !== null) {
+            foreach ($fileDiscoverResults as $file => $result) {
+                $this->cache->set($file, $result);
+            }
         }
 
         $this->isAnalyzed = true;
@@ -322,7 +436,8 @@ class Core
             $fqcn = $nameResolver->resolve($stmt->name->toString());
             $this->discoveredClasses[$fqcn] = [
                 'node' => $stmt,
-                'nameResolver' => $nameResolver
+                'nameResolver' => $nameResolver,
+                'filePath' => $this->currentlyAnalyzingFile
             ];
 
             $templates = [];
@@ -462,9 +577,15 @@ class Core
         $description = null;
         $tagsList = [];
         $responses = [];
+        $responseDescriptions = [];
         $parameters = [];
         $requestBody = null;
         $security = [];
+        $accept = null;
+        $produce = null;
+        $operationId = null;
+        $deprecated = false;
+        $extensions = [];
 
         foreach ($tags as $tag) {
             if ($tag['name'] === '@route') {
@@ -477,12 +598,43 @@ class Core
                 $description = $tag['value'];
             } elseif ($tag['name'] === '@tag') {
                 $tagsList[] = $tag['value'];
-            } elseif ($tag['name'] === '@response') {
+            } elseif ($tag['name'] === '@accept' || $tag['name'] === '@consume') {
+                $accept = $tag['value'];
+            } elseif ($tag['name'] === '@produce') {
+                $produce = $tag['value'];
+            } elseif ($tag['name'] === '@operationId' || $tag['name'] === '@operationid') {
+                $operationId = $tag['value'];
+            } elseif ($tag['name'] === '@deprecated') {
+                $deprecated = true;
+            } elseif (str_starts_with($tag['name'], '@x-')) {
+                $extName = substr($tag['name'], 1);
+                $val = $tag['value'];
+                if (str_starts_with($val, '{') || str_starts_with($val, '[')) {
+                    $decoded = json_decode($val, true);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        $val = $decoded;
+                    }
+                }
+                $extensions[$extName] = $val;
+            } elseif (in_array($tag['name'], ['@response', '@success', '@failure'])) {
                 if (preg_match('/^(\d+)\s+(.*)$/', $tag['value'], $matches)) {
                     $code = $matches[1];
-                    $typeToParse = trim($matches[2]);
+                    $typeAndDesc = trim($matches[2]);
+                    [$typeToParse, $respDesc] = $this->splitTypeAndDescription($typeAndDesc);
+
+                    if ($respDesc === '') {
+                        if ($tag['name'] === '@success') {
+                            $respDesc = 'Success';
+                        } elseif ($tag['name'] === '@failure') {
+                            $respDesc = 'Failure';
+                        } else {
+                            $respDesc = 'OK';
+                        }
+                    }
+
                     $typeNode = $this->docCollector->parseType($typeToParse);
                     $responses[$code] = $typeResolver->resolve($typeNode);
+                    $responseDescriptions[$code] = $respDesc;
                 }
             } elseif (in_array($tag['name'], ['@path', '@query', '@header', '@cookie'])) {
                 $in = substr($tag['name'], 1);
@@ -572,7 +724,13 @@ class Core
                 responses: $responses,
                 parameters: $parameters,
                 requestBody: $requestBody,
-                security: $security
+                security: $security,
+                responseDescriptions: $responseDescriptions,
+                accept: $accept,
+                produce: $produce,
+                operationId: $operationId,
+                deprecated: $deprecated,
+                extensions: $extensions
             ));
         }
     }
@@ -618,5 +776,56 @@ class Core
         } else {
             $this->generator->setServers($servers);
         }
+    }
+
+    public function setCache(Cache\CacheInterface $cache): void
+    {
+        $this->cache = $cache;
+    }
+
+    public function enableCache(string $cacheFilePath): void
+    {
+        $this->cache = new Cache\FileCache($cacheFilePath);
+    }
+
+    /**
+     * @return array{0: string, 1: string}
+     */
+    private function splitTypeAndDescription(string $str): array
+    {
+        $str = trim($str);
+        if (preg_match('/^([a-zA-Z0-9_\\\\]+)</', $str, $matches)) {
+            $base = $matches[1];
+            $depth = 0;
+            $typeLen = 0;
+            $started = false;
+            for ($i = 0; $i < strlen($str); $i++) {
+                $char = $str[$i];
+                if ($char === '<') {
+                    $depth++;
+                    $started = true;
+                } elseif ($char === '>') {
+                    $depth--;
+                }
+                if ($started && $depth === 0) {
+                    $typeLen = $i + 1;
+                    break;
+                }
+            }
+            if ($typeLen > 0) {
+                $type = substr($str, 0, $typeLen);
+                $desc = trim(substr($str, $typeLen));
+                if (str_starts_with($desc, '[]')) {
+                    $type .= '[]';
+                    $desc = trim(substr($desc, 2));
+                }
+                return [$type, $desc];
+            }
+        }
+
+        $parts = preg_split('/\s+/', $str, 2);
+        $type = $parts[0] ?? '';
+        $desc = $parts[1] ?? '';
+        return [$type, $desc];
     }
 }

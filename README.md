@@ -41,6 +41,10 @@ use PhpSwag\Core;
 
 $core = new Core();
 $core->setOpenApiVersion('3.1.0'); // Optional, defaults to 3.0.0
+
+// Optional: Enable caching to speed up consecutive generations
+$core->enableCache('./.php-swag-cache');
+
 $yaml = $core->generate(['./src/App']);
 
 file_put_contents('swagger.yaml', $yaml);
@@ -150,12 +154,19 @@ public function show(int $id, string $status) {}
     - `@summary [TEXT]`
     - `@description [TEXT]`
     - `@tag [NAME]`
+    - `@accept [MIME_TYPE]` or `@consume [MIME_TYPE]` (e.g. `json`, `xml`, or full MIME type)
+    - `@produce [MIME_TYPE]` (e.g. `json, xml` or full MIME type)
     - `@path [TYPE] $[NAME] [DESC]`
     - `@query [TYPE] $[NAME] [DESC]`
     - `@header [TYPE] $[NAME] [DESC]`
     - `@cookie [TYPE] $[NAME] [DESC]`
     - `@body [TYPE] [DESC]`
-    - `@response [CODE] [TYPE]` (e.g., `@response 200 ApiResponse<User[]>`)
+    - `@response [CODE] [TYPE] [DESC]` (e.g., `@response 200 ApiResponse<User[]> Success response`)
+    - `@success [CODE] [TYPE] [DESC]` (Alias of `@response`, e.g., `@success 200 User Success`)
+    - `@failure [CODE] [TYPE] [DESC]` (Alias of `@response`, e.g., `@failure 400 ErrorResponse Bad Request`)
+    - `@operationId [TEXT]` (Define explicit operationId)
+    - `@deprecated` (Mark the operation as deprecated)
+    - `@x-[EXTENSION_NAME] [VALUE]` (Custom OpenAPI extensions, e.g. `@x-code-samples [{"lang": "PHP"}]`)
 - **Models**:
     - `@property [TYPE] $[NAME] [DESCRIPTION]` (Supports validation tags in description)
     - `@var [TYPE]` (Supports validation tags in description) (for class properties)
@@ -192,3 +203,5 @@ You can use the CLI to generate documentation without writing any PHP code:
 - `--api-version`: API Version override.
 - `--description`: API Description override.
 - `--host`: API Host/Server URL override.
+- `--cache`: Enable performance caching.
+- `--cache-file`: Custom cache file path (default: `./.php-swag-cache`).

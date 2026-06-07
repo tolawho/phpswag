@@ -10,6 +10,8 @@ class RouteDefinition
      * @param array<int, array<string, mixed>> $parameters
      * @param array{schema: array<string, mixed>, description?: string|null}|null $requestBody
      * @param array<int, array<string, array<int, string>>> $security
+     * @param array<int|string, string> $responseDescriptions
+     * @param array<string, mixed> $extensions
      */
     public function __construct(
         public string $method,
@@ -20,7 +22,13 @@ class RouteDefinition
         public array $responses = [],
         public array $parameters = [],
         public ?array $requestBody = null,
-        public array $security = []
+        public array $security = [],
+        public array $responseDescriptions = [],
+        public ?string $accept = null,
+        public ?string $produce = null,
+        public ?string $operationId = null,
+        public bool $deprecated = false,
+        public array $extensions = []
     ) {
     }
 }

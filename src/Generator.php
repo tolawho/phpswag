@@ -103,6 +103,14 @@ class Generator
         $this->routes[] = $route;
     }
 
+    /**
+     * @return array<int, RouteDefinition>
+     */
+    public function getRoutes(): array
+    {
+        return $this->routes;
+    }
+
     public function generateYaml(): string
     {
         return Yaml::dump($this->generateSpec(), 10, 2);
@@ -177,6 +185,20 @@ class Generator
                 $routeSpec['security'] = $route->security;
             }
 
+            if ($route->operationId !== null && $route->operationId !== '') {
+                $routeSpec['operationId'] = $route->operationId;
+            }
+
+            if ($route->deprecated) {
+                $routeSpec['deprecated'] = true;
+            }
+
+            if (!empty($route->extensions)) {
+                foreach ($route->extensions as $extName => $extVal) {
+                    $routeSpec[$extName] = $extVal;
+                }
+            }
+
             if (!empty($route->parameters)) {
                 $routeSpec['parameters'] = [];
                 foreach ($route->parameters as $param) {
@@ -191,7 +213,7 @@ class Generator
 
                     $schema = $this->processSchemaOutput($param['schema']);
 
-                                        // Handle validation tags
+                    // Handle validation tags
                     $validationTags = [
                         'enum',
                         'default',
@@ -236,13 +258,21 @@ class Generator
             }
 
             if ($route->requestBody) {
+                $contentTypes = ['application/json'];
+                if ($route->accept !== null && $route->accept !== '') {
+                    $contentTypes = $this->resolveMimeTypes($route->accept);
+                }
+
+                $contentSpec = [];
+                foreach ($contentTypes as $contentType) {
+                    $contentSpec[$contentType] = [
+                        'schema' => $this->processSchemaOutput($route->requestBody['schema'])
+                    ];
+                }
+
                 $routeSpec['requestBody'] = [
                     'required' => true,
-                    'content' => [
-                        'application/json' => [
-                            'schema' => $this->processSchemaOutput($route->requestBody['schema'])
-                        ]
-                    ]
+                    'content' => $contentSpec
                 ];
                 if (!empty($route->requestBody['description'])) {
                     $routeSpec['requestBody']['description'] = $route->requestBody['description'];
@@ -251,13 +281,28 @@ class Generator
 
             if (!empty($route->responses)) {
                 foreach ($route->responses as $code => $schema) {
+                    $contentTypes = ['application/json'];
+                    if ($route->produce !== null && $route->produce !== '') {
+                        $contentTypes = $this->resolveMimeTypes($route->produce);
+                    }
+
+                    $contentSpec = [];
+                    foreach ($contentTypes as $contentType) {
+                        $contentSpec[$contentType] = [
+                            'schema' => $this->processSchemaOutput($schema)
+                        ];
+                    }
+
+                    $description = $route->responseDescriptions[(string)$code]
+                        ?? $route->responseDescriptions[$code]
+                        ?? 'OK';
+                    if ($description === '') {
+                        $description = 'OK';
+                    }
+
                     $routeSpec['responses'][(string)$code] = [
-                        'description' => 'OK',
-                        'content' => [
-                            'application/json' => [
-                                'schema' => $this->processSchemaOutput($schema)
-                            ]
-                        ]
+                        'description' => $description,
+                        'content' => $contentSpec
                     ];
                 }
             } else {
@@ -517,5 +562,35 @@ class Generator
                 }
             }
         }
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function resolveMimeTypes(string $mimeTypesString): array
+    {
+        $parts = preg_split('/[\s,]+/', trim($mimeTypesString));
+        if ($parts === false) {
+            return ['application/json'];
+        }
+        $resolved = [];
+        $map = [
+            'json' => 'application/json',
+            'xml' => 'application/xml',
+            'plain' => 'text/plain',
+            'html' => 'text/html',
+            'mpfd' => 'multipart/form-data',
+            'x-www-form-urlencoded' => 'application/x-www-form-urlencoded',
+        ];
+
+        foreach ($parts as $part) {
+            $part = trim($part);
+            if ($part === '') {
+                continue;
+            }
+            $resolved[] = $map[strtolower($part)] ?? $part;
+        }
+
+        return !empty($resolved) ? $resolved : ['application/json'];
     }
 }
