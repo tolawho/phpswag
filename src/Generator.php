@@ -115,7 +115,7 @@ class Generator
     {
         $yaml = Yaml::dump($this->generateSpec(), 10, 2, Yaml::DUMP_NUMERIC_KEY_AS_STRING);
         return preg_replace(
-            '/(?<=\n)(\s+)(?!schema\b)([a-zA-Z0-9_-]+):\s*\{\s*\}\s*(?=\n)/',
+            '/(?<=\n)(\s+)(?!(?:schema|properties|paths|schemas|responses|headers|examples|requestBodies|securitySchemes|additionalProperties|items|components|info|contact|license|externalDocs|xml)\b)([a-zA-Z0-9_-]+):\s*\{\s*\}\s*(?=\n)/',
             '$1$2: [  ]',
             $yaml
         );
@@ -123,8 +123,49 @@ class Generator
 
     public function generateJson(): string
     {
-        $json = json_encode($this->generateSpec(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        $spec = $this->forceObjectsForJson($this->generateSpec());
+        $json = json_encode($spec, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         return $json !== false ? $json : '{}';
+    }
+
+    /**
+     * Recursively forces specified keys to be objects instead of empty arrays in JSON output.
+     */
+    private function forceObjectsForJson(mixed $data): mixed
+    {
+        if (!is_array($data)) {
+            return $data;
+        }
+
+        $objectKeys = [
+            'properties',
+            'schemas',
+            'paths',
+            'responses',
+            'schema',
+            'additionalProperties',
+            'headers',
+            'examples',
+            'requestBodies',
+            'securitySchemes',
+            'items',
+            'components',
+            'info',
+            'contact',
+            'license',
+            'externalDocs',
+            'xml',
+        ];
+
+        $res = [];
+        foreach ($data as $key => $value) {
+            if (in_array($key, $objectKeys, true) && is_array($value) && empty($value)) {
+                $res[$key] = (object)[];
+            } else {
+                $res[$key] = $this->forceObjectsForJson($value);
+            }
+        }
+        return $res;
     }
 
     /**
