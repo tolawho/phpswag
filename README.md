@@ -14,6 +14,7 @@ A framework-agnostic PHP Swagger/OpenAPI generator that uses static analysis (AS
     - Primitives: `int`, `string`, `bool`, `float`.
     - Nullable types: `?string` or `string|null`.
     - Array types: `User[]` or `array<User>`.
+    - Map/Dictionary types: `array<string, User>` (resolves to an object with `additionalProperties` mapping to `User`).
     - Class references: Automatically resolves FQCN and creates schemas.
 - **Advanced OOP Support**:
     - **Inheritance**: Properties from parent classes are automatically merged into child schemas.
@@ -116,6 +117,8 @@ Supported constraints:
 
 Values are automatically cast to their appropriate types (integers, floats, or strings) in the final OpenAPI output.
 
+Validation constraints and formats are also fully supported on the `@body` tag description (e.g., `@body string file to upload format(binary)`).
+
 ### Route Parameters Handling
 
 The library supports explicit tags and auto-inference (inspired by swaggo).
@@ -161,9 +164,9 @@ public function show(int $id, string $status) {}
     - `@header [TYPE] $[NAME] [DESC]`
     - `@cookie [TYPE] $[NAME] [DESC]`
     - `@body [TYPE] [DESC]`
-    - `@response [CODE] [TYPE] [DESC]` (e.g., `@response 200 ApiResponse<User[]> Success response`)
-    - `@success [CODE] [TYPE] [DESC]` (Alias of `@response`, e.g., `@success 200 User Success`)
-    - `@failure [CODE] [TYPE] [DESC]` (Alias of `@response`, e.g., `@failure 400 ErrorResponse Bad Request`)
+    - `@response [CODE] [TYPE] [DESC]` (e.g., `@response 200 ApiResponse<User[]> Success response`, supports `default` code)
+    - `@success [CODE] [TYPE] [DESC]` (Alias of `@response`, e.g., `@success 200 User Success`, supports `default` code)
+    - `@failure [CODE] [TYPE] [DESC]` (Alias of `@response`, e.g., `@failure 400 ErrorResponse Bad Request`, supports `default` code)
     - `@operationId [TEXT]` (Define explicit operationId)
     - `@deprecated` (Mark the operation as deprecated)
     - `@x-[EXTENSION_NAME] [VALUE]` (Custom OpenAPI extensions, e.g. `@x-code-samples [{"lang": "PHP"}]`)
