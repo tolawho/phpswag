@@ -52,7 +52,7 @@ class GenerateCommand extends Command
 
         $core = new Core();
         $core->setOpenApiVersion($input->getOption('openapi-version'));
-        
+
         $filterUnused = $input->getOption('filter-unused');
         if ($filterUnused === null) {
             $filterUnused = true;

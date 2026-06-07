@@ -125,7 +125,9 @@ class Generator
     {
         $yaml = Yaml::dump($this->generateSpec(), 10, 2, Yaml::DUMP_NUMERIC_KEY_AS_STRING);
         return preg_replace(
-            '/(?<=\n)(\s+)(?!(?:schema|properties|paths|schemas|responses|headers|examples|requestBodies|securitySchemes|additionalProperties|items|components|info|contact|license|externalDocs|xml)\b)([a-zA-Z0-9_-]+):\s*\{\s*\}\s*(?=\n)/',
+            '/(?<=\n)(\s+)(?!(?:schema|properties|paths|schemas|responses|headers|examples|' .
+            'requestBodies|securitySchemes|additionalProperties|items|components|info|contact|' .
+            'license|externalDocs|xml)\b)([a-zA-Z0-9_-]+):\s*\{\s*\}\s*(?=\n)/',
             '$1$2: [  ]',
             $yaml
         );

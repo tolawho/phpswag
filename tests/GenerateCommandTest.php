@@ -36,7 +36,7 @@ class GenerateCommandTest extends TestCase
         ]);
         $this->assertEquals(0, $this->commandTester->getStatusCode());
         $this->assertStringContainsString('Documentation generated to test-swagger-true.yaml', $this->commandTester->getDisplay());
-        
+
         if (file_exists('test-swagger-true.yaml')) {
             unlink('test-swagger-true.yaml');
         }

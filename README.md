@@ -110,8 +110,10 @@ Define security schemes and requirements globally or per operation:
 
 ```php
 /**
+ * @title Security API
  * @securityDefinitions.apikey MyApiKey header X-API-KEY
  * @securityDefinitions.jwt MyJwtAuth
+ * @securityDefinitions.basic MyBasicAuth
  * @security MyJwtAuth
  */
 
@@ -339,6 +341,7 @@ public function show(int $id, string $status) {}
 - **Security**:
     - `@securityDefinitions.apikey [NAME] [IN: header|query|cookie] [KEY_NAME]`
     - `@securityDefinitions.jwt [NAME]`
+    - `@securityDefinitions.basic [NAME]`
     - `@security [NAME]` or `@security [NAME[scopes]]` (supports OR/AND)
 - **Endpoints**:
     - `@route [METHOD] [PATH]` (e.g., `@route POST /data`)

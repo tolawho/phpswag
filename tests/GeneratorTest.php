@@ -68,7 +68,7 @@ class GeneratorTest extends TestCase
 
         // 1. Verify YAML output
         $yaml = $generator->generateYaml();
-        
+
         // Assert yaml contains properties: {  } or properties: {} (should be object mapping)
         $this->assertStringContainsString('properties: {  }', $yaml);
         // Assert yaml contains api_key: [  ] (should be list/sequence)
