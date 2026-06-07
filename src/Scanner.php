@@ -6,24 +6,38 @@ use Symfony\Component\Finder\Finder;
 
 class Scanner
 {
+    /** @var array<int, string> */
     private array $paths = [];
+    /** @var array<int, string> */
     private array $excludedPaths = ['vendor'];
 
+    /**
+     * @param array<int, string> $paths
+     */
     public function __construct(array $paths = [])
     {
         $this->paths = $paths;
     }
 
+    /**
+     * @param array<int, string> $paths
+     */
     public function setPaths(array $paths): void
     {
         $this->paths = $paths;
     }
 
+    /**
+     * @param array<int, string> $excludedPaths
+     */
     public function setExcludedPaths(array $excludedPaths): void
     {
         $this->excludedPaths = $excludedPaths;
     }
 
+    /**
+     * @return array<int, string>
+     */
     public function scan(): array
     {
         if (empty($this->paths)) {

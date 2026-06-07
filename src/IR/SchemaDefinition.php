@@ -4,6 +4,12 @@ namespace PhpSwag\IR;
 
 class SchemaDefinition
 {
+    /**
+     * @param array<string, PropertyDefinition> $properties
+     * @param array<int, string> $traits
+     * @param array<int, string> $templates
+     * @param array<string, array<string, mixed>> $typeArguments
+     */
     public function __construct(
         public string $name,
         public array $properties = [],

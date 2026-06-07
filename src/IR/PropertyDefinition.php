@@ -4,6 +4,10 @@ namespace PhpSwag\IR;
 
 class PropertyDefinition
 {
+    /**
+     * @param array<string, mixed> $schema
+     * @param array<string, mixed> $extra
+     */
     public function __construct(
         public string $name,
         public array $schema,
