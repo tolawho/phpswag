@@ -193,4 +193,29 @@ PHP;
             unlink($tempFile);
         }
     }
+
+    public function testInvalidSecurityBasicThrowsException()
+    {
+        $core = new Core();
+        $code = <<<'PHP'
+<?php
+/**
+ * @title Test API
+ * @securityDefinitions.basic
+ */
+PHP;
+
+        $tempFile = tempnam(sys_get_temp_dir(), 'php-swag-invalid-basic');
+        file_put_contents($tempFile, $code);
+
+        $this->expectException(DiagnosticException::class);
+        $this->expectExceptionMessage("Invalid syntax for tag '@securityDefinitions.basic'");
+        $this->expectExceptionMessage("expected format is '@securityDefinitions.basic NAME', got empty value");
+
+        try {
+            $core->generateYaml([$tempFile]);
+        } finally {
+            unlink($tempFile);
+        }
+    }
 }

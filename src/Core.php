@@ -351,6 +351,20 @@ class Core
                                 isset($tag['line']) ? " on line " . $tag['line'] : ""
                             ));
                         }
+                    } elseif ($tagName === '@securityDefinitions.basic') {
+                        if (trim($tag['value']) !== '') {
+                            $this->securitySchemes[$tag['value']] = [
+                                'type' => 'http',
+                                'scheme' => 'basic'
+                            ];
+                        } else {
+                            throw new \PhpSwag\Exception\DiagnosticException(sprintf(
+                                "Invalid syntax for tag '@securityDefinitions.basic' in %s%s: "
+                                . "expected format is '@securityDefinitions.basic NAME', got empty value",
+                                $tag['file'] ?? $filePath,
+                                isset($tag['line']) ? " on line " . $tag['line'] : ""
+                            ));
+                        }
                     } elseif ($tagName === '@security') {
                         $this->globalSecurity = array_merge(
                             $this->globalSecurity,

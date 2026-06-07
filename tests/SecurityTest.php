@@ -42,6 +42,7 @@ class SecurityTest extends TestCase
  * @title Security API
  * @securityDefinitions.apikey MyApiKey header X-API-KEY
  * @securityDefinitions.jwt MyJwtAuth
+ * @securityDefinitions.basic MyBasicAuth
  * @security MyJwtAuth
  */
 
@@ -95,6 +96,10 @@ PHP;
         $this->assertStringContainsString('type: http', $yaml);
         $this->assertStringContainsString('scheme: bearer', $yaml);
         $this->assertStringContainsString('bearerFormat: JWT', $yaml);
+
+        $this->assertStringContainsString('MyBasicAuth:', $yaml);
+        $this->assertStringContainsString('type: http', $yaml);
+        $this->assertStringContainsString('scheme: basic', $yaml);
 
         // Check Global Security
         $this->assertStringContainsString('security:', $yaml);
