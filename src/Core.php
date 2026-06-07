@@ -258,15 +258,24 @@ class Core
                 $tags = $this->docCollector->collectTags($docComment);
 
                 $isGlobalBlock = false;
+                $hasRouteOrProperty = false;
                 foreach ($tags as $tag) {
-                    if (
-                        in_array($tag['name'], ['@title', '@version', '@description', '@host']) ||
-                        str_starts_with($tag['name'], '@contact.') ||
-                        str_starts_with($tag['name'], '@license.') ||
-                        str_starts_with($tag['name'], '@securityDefinitions.')
-                    ) {
-                        $isGlobalBlock = true;
+                    if (in_array($tag['name'], ['@route', '@property', '@var'])) {
+                        $hasRouteOrProperty = true;
                         break;
+                    }
+                }
+                if (!$hasRouteOrProperty) {
+                    foreach ($tags as $tag) {
+                        if (
+                            in_array($tag['name'], ['@title', '@version', '@description', '@host']) ||
+                            str_starts_with($tag['name'], '@contact.') ||
+                            str_starts_with($tag['name'], '@license.') ||
+                            str_starts_with($tag['name'], '@securityDefinitions.')
+                        ) {
+                            $isGlobalBlock = true;
+                            break;
+                        }
                     }
                 }
 
@@ -617,8 +626,8 @@ class Core
                 }
                 $extensions[$extName] = $val;
             } elseif (in_array($tag['name'], ['@response', '@success', '@failure'])) {
-                if (preg_match('/^(\d+)\s+(.*)$/', $tag['value'], $matches)) {
-                    $code = $matches[1];
+                if (preg_match('/^(\d+|default)\s+(.*)$/i', $tag['value'], $matches)) {
+                    $code = strtolower($matches[1]);
                     $typeAndDesc = trim($matches[2]);
                     [$typeToParse, $respDesc] = $this->splitTypeAndDescription($typeAndDesc);
 
@@ -644,11 +653,33 @@ class Core
                     'name' => $tag['propertyName']
                 ]);
             } elseif ($tag['name'] === '@body') {
+                $schema = $typeResolver->resolve($tag['type']);
+                $extra = is_array($tag['description']) ? $tag['description'] : [];
+                $desc = $extra['description'] ?? null;
+                unset($extra['description']);
+                $validationTags = [
+                    'enum', 'default', 'minimum', 'maximum', 'minLength',
+                    'maxLength', 'pattern', 'format', 'example'
+                ];
+                foreach ($validationTags as $vTag) {
+                    if (isset($extra[$vTag])) {
+                        $val = $extra[$vTag];
+                        if (
+                            in_array(
+                                $vTag,
+                                ['minimum', 'maximum', 'minLength', 'maxLength', 'default', 'example']
+                            )
+                        ) {
+                            $val = is_numeric($val)
+                                ? (strpos((string)$val, '.') !== false ? (float)$val : (int)$val)
+                                : $val;
+                        }
+                        $schema[$vTag] = $val;
+                    }
+                }
                 $requestBody = [
-                    'schema' => $typeResolver->resolve($tag['type']),
-                    'description' => is_array($tag['description'])
-                        ? ($tag['description']['description'] ?? null)
-                        : ($tag['description'] ?? null)
+                    'schema' => $schema,
+                    'description' => $desc
                 ];
             } elseif ($tag['name'] === '@security') {
                 $security = array_merge($security, $this->parseSecurityTag($tag['value']));
