@@ -30,6 +30,9 @@ class Core
     private array $metadataSources = [];
     private array $cliOverrides = [];
 
+    private array $securitySchemes = [];
+    private array $globalSecurity = [];
+
     public function __construct()
     {
         $this->scanner = new Scanner();
@@ -49,34 +52,9 @@ class Core
         $this->generator->setFilterUnusedSchemas($filter);
     }
 
-    private function analyze(array $paths): void
-    {
-        if ($this->isAnalyzed) {
-            return;
-        }
-
-        $this->scanner->setPaths($paths);
-        $files = $this->scanner->scan();
-
-        // Pass 1: Discovery
-        foreach ($files as $file) {
-            $this->discoverFile($file);
-        }
-
-        $this->applyGlobalMetadata();
-
-        // Pass 2: Analysis
-        foreach ($this->discoveredClasses as $fqcn => $data) {
-            $this->analyzeClass($fqcn, $data['node'], $data['nameResolver']);
-        }
-
-        $this->isAnalyzed = true;
-    }
-
     public function generate(array $paths): string
     {
-        $this->analyze($paths);
-        return $this->generator->generateYaml();
+        return $this->generateYaml($paths);
     }
 
     public function generateYaml(array $paths): string
@@ -89,6 +67,28 @@ class Core
     {
         $this->analyze($paths);
         return $this->generator->generateJson();
+    }
+
+    private function analyze(array $paths): void
+    {
+        if ($this->isAnalyzed) {
+            return;
+        }
+
+        $this->scanner->setPaths($paths);
+        $files = $this->scanner->scan();
+
+        foreach ($files as $file) {
+            $this->discoverFile($file);
+        }
+
+        $this->applyGlobalMetadata();
+
+        foreach ($this->discoveredClasses as $fqcn => $data) {
+            $this->analyzeClass($fqcn, $data['node'], $data['nameResolver']);
+        }
+
+        $this->isAnalyzed = true;
     }
 
     private function discoverFile(string $filePath): void
@@ -122,6 +122,20 @@ class Core
             if (is_array($token) && $token[0] === T_DOC_COMMENT) {
                 $docComment = $token[1];
                 $tags = $this->docCollector->collectTags($docComment);
+
+                $isGlobalBlock = false;
+                foreach ($tags as $tag) {
+                    if (in_array($tag['name'], ['@title', '@version', '@description', '@host']) ||
+                        str_starts_with($tag['name'], '@contact.') ||
+                        str_starts_with($tag['name'], '@license.') ||
+                        str_starts_with($tag['name'], '@securityDefinitions.')) {
+                        $isGlobalBlock = true;
+                        break;
+                    }
+                }
+
+                if (!$isGlobalBlock) continue;
+
                 foreach ($tags as $tag) {
                     $tagName = $tag['name'];
                     if (in_array($tagName, ['@title', '@version', '@description', '@host']) ||
@@ -139,26 +153,88 @@ class Core
                         }
                         $this->globalMetadata[$tagName] = $val;
                         $this->metadataSources[$tagName] = $filePath;
+                    } elseif ($tagName === '@securityDefinitions.apikey') {
+                        if (preg_match('/^(\S+)\s+(header|query|cookie)\s+(\S+)/', $tag['value'], $matches)) {
+                            $this->securitySchemes[$matches[1]] = [
+                                'type' => 'apiKey',
+                                'in' => $matches[2],
+                                'name' => $matches[3]
+                            ];
+                        }
+                    } elseif ($tagName === '@securityDefinitions.jwt') {
+                        $this->securitySchemes[$tag['value']] = [
+                            'type' => 'http',
+                            'scheme' => 'bearer',
+                            'bearerFormat' => 'JWT'
+                        ];
+                    } elseif ($tagName === '@security') {
+                        $this->globalSecurity = array_merge($this->globalSecurity, $this->parseSecurityTag($tag['value']));
                     }
                 }
             }
         }
     }
 
+    private function parseSecurityTag(string $value): array
+    {
+        if (trim($value) === '') {
+            return [[]]; // Represents an empty security requirement object, which means "no security"
+        }
+
+        $requirements = [];
+        $parts = $this->splitCommasOutsideBrackets($value);
+        $currentGroup = [];
+        foreach ($parts as $part) {
+            $part = trim($part);
+            if (empty($part)) continue;
+
+            if (preg_match('/^([^\[]+)(?:\[(.*)\])?$/', $part, $matches)) {
+                $name = trim($matches[1]);
+                $scopes = isset($matches[2]) ? array_map('trim', explode(',', trim($matches[2]))) : [];
+                $currentGroup[$name] = $scopes;
+            }
+        }
+        if (!empty($currentGroup)) {
+            $requirements[] = $currentGroup;
+        }
+        return $requirements;
+    }
+
+    private function splitCommasOutsideBrackets(string $str): array
+    {
+        $parts = [];
+        $current = '';
+        $depth = 0;
+        for ($i = 0; $i < strlen($str); $i++) {
+            $char = $str[$i];
+            if ($char === '[') $depth++;
+            elseif ($char === ']') $depth--;
+
+            if ($char === ',' && $depth === 0) {
+                $parts[] = $current;
+                $current = '';
+            } else {
+                $current .= $char;
+            }
+        }
+        $parts[] = $current;
+        return $parts;
+    }
+
     private function applyGlobalMetadata(): void
     {
         $title = $this->cliOverrides['title'] ?? $this->globalMetadata['@title'] ?? null;
-        if ($title !== null) {
+        if ($title) {
             $this->generator->setTitle($title);
         }
 
         $apiVersion = $this->cliOverrides['api-version'] ?? $this->globalMetadata['@version'] ?? null;
-        if ($apiVersion !== null) {
+        if ($apiVersion) {
             $this->generator->setApiVersion($apiVersion);
         }
 
         $description = $this->cliOverrides['description'] ?? $this->globalMetadata['@description'] ?? null;
-        if ($description !== null) {
+        if ($description) {
             $this->generator->setDescription($description);
         }
 
@@ -178,36 +254,37 @@ class Core
         }
 
         $host = $this->cliOverrides['host'] ?? $this->globalMetadata['@host'] ?? null;
-        if ($host !== null) {
+        if ($host) {
             $this->generator->setServers([['url' => $host]]);
+        }
+
+        if (!empty($this->securitySchemes)) {
+            $this->generator->setSecuritySchemes($this->securitySchemes);
+        }
+
+        if (!empty($this->globalSecurity)) {
+            $this->generator->setGlobalSecurity($this->globalSecurity);
         }
     }
 
     private function discoverStatement(Node $stmt, NameResolver $nameResolver): void
     {
         if ($stmt instanceof Class_ || $stmt instanceof Trait_) {
-            $className = $stmt->name->toString();
-            $namespace = $nameResolver->getCurrentNamespace();
-            $fqcn = ($namespace ? $namespace . '\\' : '') . $className;
-
+            $fqcn = $nameResolver->resolve($stmt->name->toString());
             $this->discoveredClasses[$fqcn] = [
                 'node' => $stmt,
                 'nameResolver' => $nameResolver
             ];
 
-            $docComment = $stmt->getDocComment()?->getText() ?? '';
-            $tags = $this->docCollector->collectTags($docComment);
-
             $templates = [];
             $typeArguments = [];
             $parent = null;
 
+            $docComment = $stmt->getDocComment()?->getText() ?? '';
+            $tags = $this->docCollector->collectTags($docComment);
             foreach ($tags as $tag) {
                 if ($tag['name'] === '@template') {
-                    $parts = preg_split('/\s+/', trim($tag['value']));
-                    if (!empty($parts[0])) {
-                        $templates[] = $parts[0];
-                    }
+                    $templates[] = $tag['value'];
                 }
 
                 if ($tag['name'] === '@extends' || $tag['name'] === '@implements') {
@@ -326,6 +403,7 @@ class Core
         $responses = [];
         $parameters = [];
         $requestBody = null;
+        $security = [];
 
         foreach ($tags as $tag) {
             if ($tag['name'] === '@route') {
@@ -359,6 +437,8 @@ class Core
                     'schema' => $typeResolver->resolve($tag['type']),
                     'description' => is_array($tag['description']) ? ($tag['description']['description'] ?? null) : ($tag['description'] ?? null)
                 ];
+            } elseif ($tag['name'] === '@security') {
+                $security = array_merge($security, $this->parseSecurityTag($tag['value']));
             }
         }
 
@@ -425,7 +505,8 @@ class Core
                 tags: $tagsList,
                 responses: $responses,
                 parameters: $parameters,
-                requestBody: $requestBody
+                requestBody: $requestBody,
+                security: $security
             ));
         }
     }

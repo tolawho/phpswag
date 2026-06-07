@@ -12,7 +12,8 @@ class RouteDefinition
         public array $tags = [],
         public array $responses = [],
         public array $parameters = [],
-        public ?array $requestBody = null
+        public ?array $requestBody = null,
+        public array $security = []
     ) {
     }
 }

@@ -7,6 +7,7 @@ A framework-agnostic PHP Swagger/OpenAPI generator that uses static analysis (AS
 - **AST-based Static Analysis**: No need to run your application.
 - **Modern PHP Support**: Handles namespaces, use aliases, and complex types.
 - **Global API Metadata Discovery**: Automatically extracts `@title`, `@version`, `@description`, `@contact.*`, `@license.*`, and `@host` from any file.
+- **Security & Authentication**: Define global security schemes (ApiKey, JWT) and apply them to endpoints or globally.
 - **Auto-inference**: Automatically resolve route parameters and request bodies from method signatures.
 - **Advanced Type Resolution**:
     - Primitives: `int`, `string`, `bool`, `float`.
@@ -61,6 +62,35 @@ You can define your API information in a top-level PHPDoc block in any of your s
  */
 ```
 
+### Security & Authentication
+
+Define security schemes and requirements globally or per operation:
+
+```php
+/**
+ * @securityDefinitions.apikey MyApiKey header X-API-KEY
+ * @securityDefinitions.jwt MyJwtAuth
+ * @security MyJwtAuth
+ */
+
+class Controller {
+    /**
+     * @route GET /private
+     * @security MyApiKey
+     */
+    public function secureAction() {}
+
+    /**
+     * @route GET /scoped
+     * @security MyJwtAuth[read, write]
+     */
+    public function scopedAction() {}
+}
+```
+
+- **OR logic**: Use multiple `@security` tags on a method.
+- **AND logic**: Use a single tag with comma-separated schemes: `@security Key1, Key2`.
+
 ### Route Parameters Handling
 
 The library supports explicit tags and auto-inference (inspired by swaggo).
@@ -90,6 +120,10 @@ public function show(int $id, string $status) {}
     - `@license.name [TEXT]`
     - `@license.url [TEXT]`
     - `@host [URL]`
+- **Security**:
+    - `@securityDefinitions.apikey [NAME] [IN: header|query|cookie] [KEY_NAME]`
+    - `@securityDefinitions.jwt [NAME]`
+    - `@security [NAME]` or `@security [NAME[scopes]]` (supports OR/AND)
 - **Endpoints**:
     - `@route [METHOD] [PATH]` (e.g., `@route POST /data`)
     - `@summary [TEXT]`
