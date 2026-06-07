@@ -23,7 +23,9 @@ class RouteParamsTest extends TestCase
         }';
 
         $filePath = __DIR__ . "/fixtures/RouteParamsController.php";
-        if (!is_dir(dirname($filePath))) mkdir(dirname($filePath), 0777, true);
+        if (!is_dir(dirname($filePath))) {
+            mkdir(dirname($filePath), 0777, true);
+        }
         file_put_contents($filePath, $code);
 
         $core = new Core();
@@ -63,7 +65,9 @@ class RouteParamsTest extends TestCase
         }';
 
         $filePath = __DIR__ . "/fixtures/RequestBodyController.php";
-        if (!is_dir(dirname($filePath))) mkdir(dirname($filePath), 0777, true);
+        if (!is_dir(dirname($filePath))) {
+            mkdir(dirname($filePath), 0777, true);
+        }
         file_put_contents($filePath, $code);
 
         $core = new Core();
@@ -90,7 +94,9 @@ class RouteParamsTest extends TestCase
         }';
 
         $filePath = __DIR__ . "/fixtures/AutoInferenceController.php";
-        if (!is_dir(dirname($filePath))) mkdir(dirname($filePath), 0777, true);
+        if (!is_dir(dirname($filePath))) {
+            mkdir(dirname($filePath), 0777, true);
+        }
         file_put_contents($filePath, $code);
 
         $core = new Core();
@@ -119,7 +125,9 @@ class RouteParamsTest extends TestCase
         }';
 
         $filePath = __DIR__ . "/fixtures/EnumDefaultController.php";
-        if (!is_dir(dirname($filePath))) mkdir(dirname($filePath), 0777, true);
+        if (!is_dir(dirname($filePath))) {
+            mkdir(dirname($filePath), 0777, true);
+        }
         file_put_contents($filePath, $code);
 
         $core = new Core();

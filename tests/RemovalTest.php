@@ -20,7 +20,9 @@ class RemovalTest extends TestCase
         }';
 
         $filePath = __DIR__ . "/fixtures/LegacyController.php";
-        if (!is_dir(dirname($filePath))) mkdir(dirname($filePath), 0777, true);
+        if (!is_dir(dirname($filePath))) {
+            mkdir(dirname($filePath), 0777, true);
+        }
         file_put_contents($filePath, $code);
 
         $core = new Core();
@@ -44,7 +46,9 @@ class RemovalTest extends TestCase
         }';
 
         $filePath = __DIR__ . "/fixtures/LegacyRequestController.php";
-        if (!is_dir(dirname($filePath))) mkdir(dirname($filePath), 0777, true);
+        if (!is_dir(dirname($filePath))) {
+            mkdir(dirname($filePath), 0777, true);
+        }
         file_put_contents($filePath, $code);
 
         $core = new Core();

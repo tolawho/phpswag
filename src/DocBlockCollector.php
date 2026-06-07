@@ -36,7 +36,9 @@ class DocBlockCollector
                 if (in_array($tagName, ['@property', '@var', '@return', '@path', '@query', '@header', '@cookie'])) {
                     try {
                         // For @path, @query, etc., we treat them similarly to @param for parsing convenience
-                        $parseTagName = in_array($tagName, ['@path', '@query', '@header', '@cookie']) ? '@param' : $tagName;
+                        $parseTagName = in_array($tagName, ['@path', '@query', '@header', '@cookie'])
+                            ? '@param'
+                            : $tagName;
                         $doc = "/** $parseTagName $value */";
                         $node = $this->parser->parse($doc);
                         foreach ($node->getTags() as $tag) {
@@ -99,20 +101,20 @@ class DocBlockCollector
         return $tags;
     }
 
-        private function parseExtraAttributes(string $description): array
+    private function parseExtraAttributes(string $description): array
     {
         $res = ['description' => $description];
 
         $attributes = [
-            'enum' => '/enum\(([^)]+)\)/',
-            'default' => '/default\(([^)]+)\)/',
-            'minimum' => '/minimum\(([^)]+)\)/',
-            'maximum' => '/maximum\(([^)]+)\)/',
-            'minLength' => '/minLength\(([^)]+)\)/',
-            'maxLength' => '/maxLength\(([^)]+)\)/',
-            'pattern' => '/pattern\(([^)]+)\)/',
-            'format' => '/format\(([^)]+)\)/',
-            'example' => '/example\(([^)]+)\)/',
+        'enum' => '/enum\(([^)]+)\)/',
+        'default' => '/default\(([^)]+)\)/',
+        'minimum' => '/minimum\(([^)]+)\)/',
+        'maximum' => '/maximum\(([^)]+)\)/',
+        'minLength' => '/minLength\(([^)]+)\)/',
+        'maxLength' => '/maxLength\(([^)]+)\)/',
+        'pattern' => '/pattern\(([^)]+)\)/',
+        'format' => '/format\(([^)]+)\)/',
+        'example' => '/example\(([^)]+)\)/',
         ];
 
         foreach ($attributes as $key => $pattern) {

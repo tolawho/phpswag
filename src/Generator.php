@@ -166,12 +166,29 @@ class Generator
                     $schema = $this->processSchemaOutput($param['schema']);
 
                                         // Handle validation tags
-                    $validationTags = ['enum', 'default', 'minimum', 'maximum', 'minLength', 'maxLength', 'pattern', 'format', 'example'];
+                    $validationTags = [
+                        'enum',
+                        'default',
+                        'minimum',
+                        'maximum',
+                        'minLength',
+                        'maxLength',
+                        'pattern',
+                        'format',
+                        'example',
+                    ];
                     foreach ($validationTags as $vTag) {
                         if (isset($param[$vTag])) {
                             $val = $param[$vTag];
-                            if (in_array($vTag, ['minimum', 'maximum', 'minLength', 'maxLength', 'default', 'example'])) {
-                                $val = is_numeric($val) ? (strpos($val, '.') !== false ? (float)$val : (int)$val) : $val;
+                            if (
+                                in_array(
+                                    $vTag,
+                                    ['minimum', 'maximum', 'minLength', 'maxLength', 'default', 'example']
+                                )
+                            ) {
+                                $val = is_numeric($val)
+                                    ? (strpos($val, '.') !== false ? (float)$val : (int)$val)
+                                    : $val;
                             }
                             $schema[$vTag] = $val;
                         }
@@ -242,12 +259,29 @@ class Generator
                                 $propSchema = $this->applyTypeArguments($prop->schema, $schema->typeArguments);
 
                 // Apply extra validation attributes to property schema
-                $validationTags = ['enum', 'default', 'minimum', 'maximum', 'minLength', 'maxLength', 'pattern', 'format', 'example'];
+                $validationTags = [
+                    'enum',
+                    'default',
+                    'minimum',
+                    'maximum',
+                    'minLength',
+                    'maxLength',
+                    'pattern',
+                    'format',
+                    'example',
+                ];
                 foreach ($validationTags as $vTag) {
                     if (isset($prop->extra[$vTag])) {
                         $val = $prop->extra[$vTag];
-                        if (in_array($vTag, ['minimum', 'maximum', 'minLength', 'maxLength', 'default', 'example'])) {
-                            $val = is_numeric($val) ? (strpos($val, '.') !== false ? (float)$val : (int)$val) : $val;
+                        if (
+                            in_array(
+                                $vTag,
+                                ['minimum', 'maximum', 'minLength', 'maxLength', 'default', 'example']
+                            )
+                        ) {
+                            $val = is_numeric($val)
+                                ? (strpos($val, '.') !== false ? (float)$val : (int)$val)
+                                : $val;
                         }
                         $propSchema[$vTag] = $val;
                     }
