@@ -165,12 +165,16 @@ class Generator
 
                     $schema = $this->processSchemaOutput($param['schema']);
 
-                    // Handle enum and default from extra metadata if present
-                    if (isset($param['enum'])) {
-                        $schema['enum'] = $param['enum'];
-                    }
-                    if (isset($param['default'])) {
-                        $schema['default'] = $param['default'];
+                                        // Handle validation tags
+                    $validationTags = ['enum', 'default', 'minimum', 'maximum', 'minLength', 'maxLength', 'pattern', 'format', 'example'];
+                    foreach ($validationTags as $vTag) {
+                        if (isset($param[$vTag])) {
+                            $val = $param[$vTag];
+                            if (in_array($vTag, ['minimum', 'maximum', 'minLength', 'maxLength', 'default', 'example'])) {
+                                $val = is_numeric($val) ? (strpos($val, '.') !== false ? (float)$val : (int)$val) : $val;
+                            }
+                            $schema[$vTag] = $val;
+                        }
                     }
 
                     $paramSpec = [
@@ -235,7 +239,20 @@ class Generator
             $properties = $this->resolveAllProperties($schema);
             $propSpecs = [];
             foreach ($properties as $prop) {
-                $propSchema = $this->applyTypeArguments($prop->schema, $schema->typeArguments);
+                                $propSchema = $this->applyTypeArguments($prop->schema, $schema->typeArguments);
+
+                // Apply extra validation attributes to property schema
+                $validationTags = ['enum', 'default', 'minimum', 'maximum', 'minLength', 'maxLength', 'pattern', 'format', 'example'];
+                foreach ($validationTags as $vTag) {
+                    if (isset($prop->extra[$vTag])) {
+                        $val = $prop->extra[$vTag];
+                        if (in_array($vTag, ['minimum', 'maximum', 'minLength', 'maxLength', 'default', 'example'])) {
+                            $val = is_numeric($val) ? (strpos($val, '.') !== false ? (float)$val : (int)$val) : $val;
+                        }
+                        $propSchema[$vTag] = $val;
+                    }
+                }
+
                 $propSpecs[$prop->name] = $this->processSchemaOutput($propSchema, $prop->description);
             }
 

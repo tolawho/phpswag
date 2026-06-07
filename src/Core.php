@@ -353,10 +353,14 @@ class Core
 
                 $desc = is_array($tag['description']) ? ($tag['description']['description'] ?? null) : ($tag['description'] ?? null);
 
+                                $extra = is_array($tag['description']) ? $tag['description'] : [];
+                unset($extra['description']);
+
                 $properties[] = new PropertyDefinition(
                     $tag['propertyName'],
                     $propertySchema,
-                    $desc
+                    $desc,
+                    $extra
                 );
             }
         }
@@ -372,10 +376,14 @@ class Core
 
                         $desc = is_array($pTag['description']) ? ($pTag['description']['description'] ?? null) : ($pTag['description'] ?? null);
 
+                                                $extra = is_array($pTag['description']) ? $pTag['description'] : [];
+                        unset($extra['description']);
+
                         $properties[] = new PropertyDefinition(
                             $member->props[0]->name->toString(),
                             $propertySchema,
-                            $desc
+                            $desc,
+                            $extra
                         );
                     }
                 }
