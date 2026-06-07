@@ -28,6 +28,7 @@ A framework-agnostic PHP Swagger/OpenAPI generator that uses static analysis (AS
     - Uses clean schema naming: `ApiResponse.User`.
 - **OpenAPI 3.0 & 3.1**: Supports both versions, with automatic conversion of nullable types for 3.1.
 - **Schema Registry**: Handles circular references and avoids duplicate definitions.
+- **Native PHP Enum Support (PHP 8.1+)**: Automatically extracts enum cases and types for both `BackedEnum` (string/int) and `UnitEnum`.
 
 ## Installation
 
@@ -218,6 +219,65 @@ You can override the automatic inference using the `@required` tag:
    */
   class User {}
   ```
+
+### Native PHP Enum Support (PHP 8.1+)
+
+The library fully supports PHP 8.1+ native Enums (both `BackedEnum` and `UnitEnum`). When an enum is referenced as a type in `@response`, `@property`, `@var`, etc., it is automatically detected and registered in the OpenAPI schemas.
+
+- **BackedEnum (string/int)**: Automatically resolves the schema `type` to `string` or `integer` based on the backing type, and populates the `enum` array with the backing values of all cases.
+- **UnitEnum**: Resolves the schema `type` to `string` and populates the `enum` array with the names of all cases.
+
+#### Example
+
+```php
+namespace App\Enums;
+
+// Backed Enum (string)
+enum UserStatus: string {
+    case Pending = 'pending';
+    case Active = 'active';
+    case Suspended = 'suspended';
+}
+
+// Backed Enum (int)
+enum UserRole: int {
+    case Admin = 1;
+    case Editor = 2;
+    case User = 3;
+}
+
+// Pure Unit Enum
+enum TicketPriority {
+    case Low;
+    case Medium;
+    case High;
+}
+```
+
+When you use these enums as property types or response types, they are generated in the OpenAPI specification as:
+
+```yaml
+components:
+  schemas:
+    App_Enums_UserStatus:
+      type: string
+      enum:
+        - pending
+        - active
+        - suspended
+    App_Enums_UserRole:
+      type: integer
+      enum:
+        - 1
+        - 2
+        - 3
+    App_Enums_TicketPriority:
+      type: string
+      enum:
+        - Low
+        - Medium
+        - High
+```
 
 ### Route Parameters Handling
 

@@ -124,7 +124,7 @@
 - [x] **[F5.1] Controller-level Metadata Support:** Hỗ trợ @tag, @security, @accept, @produce ở cấp Class.
 - [x] **[F5.2] Enhanced Diagnostics & Error Reporting:** Cải thiện thông báo lỗi với đầy đủ thông tin ngữ cảnh (file, line).
 - [x] **[F5.3] Intelligent Schema Inference:** Tự động xác định `required` fields dựa trên type-hint và giá trị mặc định.
-- [ ] **[F5.4] Native PHP Enum Support:** Tự động trích xuất các case từ PHP 8.1+ Enums.
+- [x] **[F5.4] Native PHP Enum Support:** Tự động trích xuất các case từ PHP 8.1+ Enums.
 - [ ] **[F5.5] Smart Type Mapping Registry:** Map các class phổ biến (DateTime, Uuid, UploadedFile) sang kiểu dữ liệu OpenAPI tương ứng.
 
 ## 3. Team Backlog (User Stories) (Tiếp theo)
@@ -143,9 +143,9 @@
 - [x] **[S5.3.3] Explicit @required Tag:** Hỗ trợ tag @required để ghi đè logic suy luận.
 
 ### Stories cho [F5.4] Native PHP Enum Support
-- [ ] **[S5.4.1] Enum Detection logic:** Nhận diện class là Enum thông qua Reflection.
-- [ ] **[S5.4.2] BackedEnum Value Extraction:** Tự động lấy `value` cho BackedEnum (string/int).
-- [ ] **[S5.4.3] UnitEnum Name Extraction:** Tự động lấy `name` cho UnitEnum.
+- [x] **[S5.4.1] Enum Detection logic:** Nhận diện class là Enum thông qua Reflection.
+- [x] **[S5.4.2] BackedEnum Value Extraction:** Tự động lấy `value` cho BackedEnum (string/int).
+- [x] **[S5.4.3] UnitEnum Name Extraction:** Tự động lấy `name` cho UnitEnum.
 
 ### Stories cho [F5.5] Smart Type Mapping
 - [ ] **[S5.5.1] Built-in Date/Time Mapping:** Map `DateTimeInterface` sang `string/date-time`.

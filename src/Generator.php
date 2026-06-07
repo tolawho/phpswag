@@ -375,6 +375,15 @@ class Generator
                 continue; // Don't generate base generic schemas
             }
 
+            if ($schema->enum !== null) {
+                $schemaSpec = [
+                    'type' => $schema->enumType ?? 'string',
+                    'enum' => $schema->enum
+                ];
+                $spec['components']['schemas'][$this->schemaRegistry->getSchemaId($schema->name)] = $schemaSpec;
+                continue;
+            }
+
             $properties = $this->resolveAllProperties($schema);
             $propSpecs = [];
             $requiredProps = [];
