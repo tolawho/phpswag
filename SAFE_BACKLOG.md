@@ -125,7 +125,7 @@
 - [x] **[F5.2] Enhanced Diagnostics & Error Reporting:** Cải thiện thông báo lỗi với đầy đủ thông tin ngữ cảnh (file, line).
 - [x] **[F5.3] Intelligent Schema Inference:** Tự động xác định `required` fields dựa trên type-hint và giá trị mặc định.
 - [x] **[F5.4] Native PHP Enum Support:** Tự động trích xuất các case từ PHP 8.1+ Enums.
-- [ ] **[F5.5] Smart Type Mapping Registry:** Map các class phổ biến (DateTime, Uuid, UploadedFile) sang kiểu dữ liệu OpenAPI tương ứng.
+- [x] **[F5.5] Smart Type Mapping Registry:** Map các class phổ biến (DateTime, Uuid, UploadedFile) sang kiểu dữ liệu OpenAPI tương ứng.
 
 ## 3. Team Backlog (User Stories) (Tiếp theo)
 
@@ -148,6 +148,6 @@
 - [x] **[S5.4.3] UnitEnum Name Extraction:** Tự động lấy `name` cho UnitEnum.
 
 ### Stories cho [F5.5] Smart Type Mapping
-- [ ] **[S5.5.1] Built-in Date/Time Mapping:** Map `DateTimeInterface` sang `string/date-time`.
-- [ ] **[S5.5.2] External Library Support (Optional):** Hỗ trợ mapping cho Uuid (Ramsey/Symfony) nếu class tồn tại.
-- [ ] **[S5.5.3] Binary/File Mapping:** Map các class UploadedFile phổ biến sang `string/binary`.
+- [x] **[S5.5.1] Built-in Date/Time Mapping:** Map `DateTimeInterface` sang `string/date-time`.
+- [x] **[S5.5.2] External Library Support (Optional):** Hỗ trợ mapping cho Uuid (Ramsey/Symfony) nếu class tồn tại.
+- [x] **[S5.5.3] Binary/File Mapping:** Map các class UploadedFile phổ biến sang `string/binary`.

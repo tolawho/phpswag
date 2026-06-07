@@ -21,6 +21,7 @@ class Core
     private DocBlockCollector $docCollector;
     private Generator $generator;
     private SchemaRegistry $schemaRegistry;
+    private TypeMappingRegistry $typeMappingRegistry;
     private ?Cache\CacheInterface $cache = null;
 
     /** @var array<string, array{node: Class_|Trait_|Enum_, nameResolver: NameResolver, filePath: string}> */
@@ -49,7 +50,13 @@ class Core
         $this->parser = new Parser();
         $this->docCollector = new DocBlockCollector();
         $this->schemaRegistry = new SchemaRegistry();
+        $this->typeMappingRegistry = new TypeMappingRegistry();
         $this->generator = new Generator($this->schemaRegistry);
+    }
+
+    public function getTypeMappingRegistry(): TypeMappingRegistry
+    {
+        return $this->typeMappingRegistry;
     }
 
     public function setOpenApiVersion(string $version): void
@@ -581,7 +588,12 @@ class Core
             }
             return;
         }
-        $typeResolver = new TypeResolver($this->schemaRegistry, $nameResolver, $schema->templates);
+        $typeResolver = new TypeResolver(
+            $this->schemaRegistry,
+            $nameResolver,
+            $schema->templates,
+            $this->typeMappingRegistry
+        );
         $docComment = $stmt->getDocComment()?->getText() ?? '';
         $docStartLine = $stmt->getDocComment()?->getStartLine();
         $tags = $this->docCollector->collectTags($docComment, $docStartLine, $this->currentlyAnalyzingFile);

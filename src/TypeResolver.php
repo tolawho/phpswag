@@ -14,17 +14,23 @@ class TypeResolver
 {
     private SchemaRegistry $schemaRegistry;
     private NameResolver $nameResolver;
+    private TypeMappingRegistry $typeMappingRegistry;
     /** @var array<int, string> */
     private array $templates = [];
 
     /**
      * @param array<int, string> $templates
      */
-    public function __construct(SchemaRegistry $schemaRegistry, NameResolver $nameResolver, array $templates = [])
-    {
+    public function __construct(
+        SchemaRegistry $schemaRegistry,
+        NameResolver $nameResolver,
+        array $templates = [],
+        ?TypeMappingRegistry $typeMappingRegistry = null
+    ) {
         $this->schemaRegistry = $schemaRegistry;
         $this->nameResolver = $nameResolver;
         $this->templates = $templates;
+        $this->typeMappingRegistry = $typeMappingRegistry ?? new TypeMappingRegistry();
     }
 
     /**
@@ -125,6 +131,10 @@ class TypeResolver
         }
 
         $fqcn = $this->nameResolver->resolve($name);
+        if ($this->typeMappingRegistry->has($fqcn)) {
+            return $this->typeMappingRegistry->get($fqcn) ?? [];
+        }
+
         if (!$this->schemaRegistry->has($fqcn)) {
             throw new \PhpSwag\Exception\DiagnosticException(sprintf(
                 "Unresolved class '%s'%s%s",

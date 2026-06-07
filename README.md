@@ -279,6 +279,34 @@ components:
         - High
 ```
 
+### Smart Type Mapping & Custom Registry
+
+The generator includes a built-in `TypeMappingRegistry` that automatically maps common PHP and library classes to their standard OpenAPI representations without requiring you to document them or triggering unresolved class errors:
+
+- **DateTime / Date**:
+  - `DateTime`, `DateTimeImmutable`, `DateTimeInterface` map to `string` with `format: date-time`.
+- **File Uploads**:
+  - `Symfony\Component\HttpFoundation\File\UploadedFile`, `Psr\Http\Message\UploadedFileInterface`, `Illuminate\Http\UploadedFile` map to `string` with `format: binary`.
+- **UUIDs**:
+  - `Ramsey\Uuid\Uuid`, `Ramsey\Uuid\UuidInterface`, `Symfony\Component\Uid\Uuid` map to `string` with `format: uuid` (only if the classes/interfaces exist in your runtime environment).
+
+#### Custom Type Mapping
+
+You can register your own custom class-to-schema mappings programmatically using `getTypeMappingRegistry()`:
+
+```php
+use PhpSwag\Core;
+
+$core = new Core();
+$core->getTypeMappingRegistry()->register(
+    'App\ValueObjects\Money',
+    [
+        'type' => 'number',
+        'format' => 'money'
+    ]
+);
+```
+
 ### Route Parameters Handling
 
 The library supports explicit tags and auto-inference (inspired by swaggo).
