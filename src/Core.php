@@ -39,6 +39,8 @@ class Core
     private array $securitySchemes = [];
     /** @var array<int, array<string, array<int, string>>> */
     private array $globalSecurity = [];
+    /** @var array<string, array{name: string, description?: string}> */
+    private array $globalTags = [];
 
     public function __construct()
     {
@@ -121,6 +123,9 @@ class Core
             $this->securitySchemes = array_merge($this->securitySchemes, $cached['securitySchemes']);
             $this->globalSecurity = array_merge($this->globalSecurity, $cached['globalSecurity']);
             $this->metadataSources = array_merge($this->metadataSources, $cached['metadataSources']);
+            if (isset($cached['globalTags'])) {
+                $this->globalTags = array_merge($this->globalTags, $cached['globalTags']);
+            }
 
             // Restore schemas
             foreach ($cached['schemas'] as $schema) {
@@ -148,6 +153,7 @@ class Core
             $securitySchemesBefore = $this->securitySchemes;
             $globalSecurityBefore = $this->globalSecurity;
             $metadataSourcesBefore = $this->metadataSources;
+            $globalTagsBefore = $this->globalTags;
 
             $this->discoverFile($file);
 
@@ -158,6 +164,7 @@ class Core
             $newSecuritySchemes = array_diff_key($this->securitySchemes, $securitySchemesBefore);
             $newGlobalSecurity = array_slice($this->globalSecurity, count($globalSecurityBefore));
             $newMetadataSources = array_diff_key($this->metadataSources, $metadataSourcesBefore);
+            $newGlobalTags = array_diff_key($this->globalTags, $globalTagsBefore);
 
             $fileDiscoverResults[$file] = [
                 'hash' => md5_file($file),
@@ -166,6 +173,7 @@ class Core
                 'securitySchemes' => $newSecuritySchemes,
                 'globalSecurity' => $newGlobalSecurity,
                 'metadataSources' => $newMetadataSources,
+                'globalTags' => $newGlobalTags,
                 'customSchemaIds' => [],
                 'routes' => [],
             ];
@@ -271,7 +279,8 @@ class Core
                             in_array($tag['name'], ['@title', '@version', '@description', '@host']) ||
                             str_starts_with($tag['name'], '@contact.') ||
                             str_starts_with($tag['name'], '@license.') ||
-                            str_starts_with($tag['name'], '@securityDefinitions.')
+                            str_starts_with($tag['name'], '@securityDefinitions.') ||
+                            str_starts_with($tag['name'], '@tag.')
                         ) {
                             $isGlobalBlock = true;
                             break;
@@ -283,6 +292,7 @@ class Core
                     continue;
                 }
 
+                $currentTagName = null;
                 foreach ($tags as $tag) {
                     $tagName = $tag['name'];
                     if (
@@ -320,6 +330,18 @@ class Core
                             $this->globalSecurity,
                             $this->parseSecurityTag($tag['value'])
                         );
+                    } elseif ($tagName === '@tag.name') {
+                        $parts = preg_split('/\s+/', $tag['value'], 2);
+                        if (is_array($parts) && isset($parts[0])) {
+                            $name = $parts[0];
+                            $desc = isset($parts[1]) ? trim($parts[1]) : null;
+
+                            $tagData = ['name' => $name];
+                            if ($desc !== null && $desc !== '') {
+                                $tagData['description'] = $desc;
+                            }
+                            $this->globalTags[$name] = $tagData;
+                        }
                     }
                 }
             }
@@ -437,6 +459,10 @@ class Core
         if (!empty($this->globalSecurity)) {
             $this->generator->setGlobalSecurity($this->globalSecurity);
         }
+
+        if (!empty($this->globalTags)) {
+            $this->generator->setGlobalTags($this->globalTags);
+        }
     }
 
     private function discoverStatement(Node $stmt, NameResolver $nameResolver): void
@@ -500,6 +526,11 @@ class Core
         $docComment = $stmt->getDocComment()?->getText() ?? '';
         $tags = $this->docCollector->collectTags($docComment);
 
+        $classTags = [];
+        $classSecurity = [];
+        $classAccept = null;
+        $classProduce = null;
+
         foreach ($tags as $tag) {
             if ($tag['name'] === '@extends' || $tag['name'] === '@use') {
                 $typeNode = $this->docCollector->parseType($tag['value']);
@@ -513,6 +544,15 @@ class Core
                         }
                     }
                 }
+            } elseif ($tag['name'] === '@tag') {
+                $splitTags = array_filter(array_map('trim', explode(',', $tag['value'])), fn($t) => $t !== '');
+                $classTags = array_merge($classTags, $splitTags);
+            } elseif ($tag['name'] === '@security') {
+                $classSecurity = array_merge($classSecurity, $this->parseSecurityTag($tag['value']));
+            } elseif ($tag['name'] === '@accept' || $tag['name'] === '@consume') {
+                $classAccept = $tag['value'];
+            } elseif ($tag['name'] === '@produce') {
+                $classProduce = $tag['value'];
             }
         }
 
@@ -567,7 +607,14 @@ class Core
             }
 
             if ($member instanceof ClassMethod) {
-                $this->analyzeMethod($member, $nameResolver, $typeResolver);
+                $this->analyzeMethod(
+                    $member,
+                    $typeResolver,
+                    $classTags,
+                    $classSecurity,
+                    $classAccept,
+                    $classProduce
+                );
             }
         }
 
@@ -576,22 +623,35 @@ class Core
         }
     }
 
-    private function analyzeMethod(ClassMethod $member, NameResolver $nameResolver, TypeResolver $typeResolver): void
-    {
+    /**
+     * @param array<int, string> $classTags
+     * @param array<int, array<string, array<int, string>>> $classSecurity
+     */
+    private function analyzeMethod(
+        ClassMethod $member,
+        TypeResolver $typeResolver,
+        array $classTags = [],
+        array $classSecurity = [],
+        ?string $classAccept = null,
+        ?string $classProduce = null
+    ): void {
         $methodDoc = $member->getDocComment()?->getText() ?? '';
         $tags = $this->docCollector->collectTags($methodDoc);
 
         $routeTag = null;
         $summary = null;
         $description = null;
-        $tagsList = [];
+        $tagsList = $classTags;
         $responses = [];
         $responseDescriptions = [];
         $parameters = [];
         $requestBody = null;
         $security = [];
+        $hasMethodSecurity = false;
         $accept = null;
+        $hasMethodAccept = false;
         $produce = null;
+        $hasMethodProduce = false;
         $operationId = null;
         $deprecated = false;
         $extensions = [];
@@ -606,11 +666,14 @@ class Core
             } elseif ($tag['name'] === '@description') {
                 $description = $tag['value'];
             } elseif ($tag['name'] === '@tag') {
-                $tagsList[] = $tag['value'];
+                $splitTags = array_filter(array_map('trim', explode(',', $tag['value'])), fn($t) => $t !== '');
+                $tagsList = array_merge($tagsList, $splitTags);
             } elseif ($tag['name'] === '@accept' || $tag['name'] === '@consume') {
                 $accept = $tag['value'];
+                $hasMethodAccept = true;
             } elseif ($tag['name'] === '@produce') {
                 $produce = $tag['value'];
+                $hasMethodProduce = true;
             } elseif ($tag['name'] === '@operationId' || $tag['name'] === '@operationid') {
                 $operationId = $tag['value'];
             } elseif ($tag['name'] === '@deprecated') {
@@ -682,9 +745,21 @@ class Core
                     'description' => $desc
                 ];
             } elseif ($tag['name'] === '@security') {
+                $hasMethodSecurity = true;
                 $security = array_merge($security, $this->parseSecurityTag($tag['value']));
             }
         }
+
+        if (!$hasMethodSecurity) {
+            $security = $classSecurity;
+        }
+        if (!$hasMethodAccept) {
+            $accept = $classAccept;
+        }
+        if (!$hasMethodProduce) {
+            $produce = $classProduce;
+        }
+        $tagsList = array_values(array_unique($tagsList));
 
         if ($routeTag) {
             $routeParts = explode(' ', $routeTag);

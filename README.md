@@ -65,8 +65,42 @@ You can define your API information in a top-level PHPDoc block in any of your s
  * @license.name MIT
  * @license.url https://opensource.org/licenses/MIT
  * @host https://api.example.com
+ *
+ * @tag.name Auth Authentication endpoints
+ * @tag.name Users User management endpoints
  */
 ```
+
+- **Global Tag Ordering**: Explicitly define tags using `@tag.name [name] [description]` at the global level. The generated OpenAPI spec will preserve the order and descriptions of these tags. Any other tags found on endpoints that are not declared at the global level will be sorted alphabetically and appended to the end of the list.
+
+### Controller-level Metadata & Inheritance
+
+You can declare `@tag`, `@security`, `@accept` (or `@consume`), and `@produce` at the Controller (class) level. These act as defaults for all methods in the class:
+
+```php
+/**
+ * @tag Users
+ * @security BearerAuth
+ * @accept json
+ * @produce json
+ */
+class UserController {
+    /**
+     * @route POST /users
+     * @body UserCreateRequest
+     */
+    public function create() {} // Inherits @tag Users, @security BearerAuth, @accept json, @produce json
+
+    /**
+     * @route GET /users/public
+     * @security
+     */
+    public function listPublic() {} // Overrides security to "no security" (empty array)
+}
+```
+
+- **Multiple/Comma-separated Tags**: You can specify multiple tags on a single line separated by commas, e.g., `@tag Auth, Users` (supported at both class and method level). Class-level and method-level tags are automatically merged.
+- **Overrides**: Method-level `@security`, `@accept`/`@consume`, and `@produce` completely override the class-level defaults. An empty `@security` tag on a method overrides class security to disable authentication for that endpoint.
 
 ### Security & Authentication
 

@@ -27,6 +27,8 @@ class Generator
     private array $securitySchemes = [];
     /** @var array<int, array<string, array<int, string>>> */
     private array $globalSecurity = [];
+    /** @var array<string, array{name: string, description?: string}> */
+    private array $globalTags = [];
 
     public function __construct(SchemaRegistry $schemaRegistry)
     {
@@ -98,6 +100,14 @@ class Generator
         $this->globalSecurity = $security;
     }
 
+    /**
+     * @param array<string, array{name: string, description?: string}> $globalTags
+     */
+    public function setGlobalTags(array $globalTags): void
+    {
+        $this->globalTags = $globalTags;
+    }
+
     public function addRoute(RouteDefinition $route): void
     {
         $this->routes[] = $route;
@@ -163,6 +173,42 @@ class Generator
 
         if (!empty($this->globalSecurity)) {
             $spec['security'] = $this->globalSecurity;
+        }
+
+        $routeTags = [];
+        foreach ($this->routes as $route) {
+            foreach ($route->tags as $tag) {
+                if (!in_array($tag, $routeTags)) {
+                    $routeTags[] = $tag;
+                }
+            }
+        }
+
+        $orderedTags = [];
+        $addedTagNames = [];
+
+        // 1. Add explicitly defined global tags first
+        foreach ($this->globalTags as $tagName => $tagObj) {
+            $orderedTags[] = $tagObj;
+            $addedTagNames[] = $tagName;
+        }
+
+        // 2. Add used tags that are not in global tags, sorted alphabetically
+        $remainingTags = [];
+        foreach ($routeTags as $tag) {
+            if (!in_array($tag, $addedTagNames)) {
+                $remainingTags[] = $tag;
+            }
+        }
+        if (!empty($remainingTags)) {
+            sort($remainingTags, SORT_STRING);
+            foreach ($remainingTags as $tag) {
+                $orderedTags[] = ['name' => $tag];
+            }
+        }
+
+        if (!empty($orderedTags)) {
+            $spec['tags'] = $orderedTags;
         }
 
         foreach ($this->routes as $route) {

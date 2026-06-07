@@ -121,7 +121,7 @@
 ## 2. Program Backlog (Features) (Tiếp theo)
 
 ### Features cho [Epic 5] Developer Experience
-- [ ] **[F5.1] Controller-level Metadata Support:** Hỗ trợ @tag, @security, @accept, @produce ở cấp Class.
+- [x] **[F5.1] Controller-level Metadata Support:** Hỗ trợ @tag, @security, @accept, @produce ở cấp Class.
 - [ ] **[F5.2] Enhanced Diagnostics & Error Reporting:** Cải thiện thông báo lỗi với đầy đủ thông tin ngữ cảnh (file, line).
 - [ ] **[F5.3] Intelligent Schema Inference:** Tự động xác định `required` fields dựa trên type-hint và giá trị mặc định.
 - [ ] **[F5.4] Native PHP Enum Support:** Tự động trích xuất các case từ PHP 8.1+ Enums.
@@ -130,8 +130,8 @@
 ## 3. Team Backlog (User Stories) (Tiếp theo)
 
 ### Stories cho [F5.1] Controller-level Metadata
-- [ ] **[S5.1.1] Class-level Tag Collection:** Thu thập @tag từ class docblock và gộp với tags ở method.
-- [ ] **[S5.1.2] Class-level Security & Content-Type:** Áp dụng @security, @accept, @produce từ class làm mặc định cho tất cả method bên trong, cho phép method ghi đè.
+- [x] **[S5.1.1] Class-level Tag Collection:** Thu thập @tag từ class docblock và gộp với tags ở method.
+- [x] **[S5.1.2] Class-level Security & Content-Type:** Áp dụng @security, @accept, @produce từ class làm mặc định cho tất cả method bên trong, cho phép method ghi đè.
 
 ### Stories cho [F5.2] Enhanced Diagnostics
 - [ ] **[S5.2.1] Source Location Tracking:** Lưu trữ thông tin file và dòng code trong quá trình parse.

@@ -7,4 +7,8 @@
  * @host /api/v3
  * @securityDefinitions.apikey api_key header api_key
  * @securityDefinitions.jwt petstore_auth
+ * 
+ * @tag.name store store management endpoints
+ * @tag.name user user management endpoints
+ * @tag.name pet pet management endpoints
  */
