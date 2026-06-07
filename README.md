@@ -10,6 +10,7 @@ A framework-agnostic PHP Swagger/OpenAPI generator that uses static analysis (AS
 - **Security & Authentication**: Define global security schemes (ApiKey, JWT) and apply them to endpoints or globally.
 - **Comprehensive Schema Validation**: Support for `minimum`, `maximum`, `minLength`, `maxLength`, `pattern`, `format`, and `example` directly in PHPDoc.
 - **Auto-inference**: Automatically resolve route parameters and request bodies from method signatures.
+- **Intelligent Schema Inference**: Automatically determines `required` fields for Model schemas based on PHP native type-hint nullability, PHPDoc types, and default values. Override with explicit `@required` tag.
 - **Advanced Type Resolution**:
     - Primitives: `int`, `string`, `bool`, `float`.
     - Nullable types: `?string` or `string|null`.
@@ -153,6 +154,71 @@ Values are automatically cast to their appropriate types (integers, floats, or s
 
 Validation constraints and formats are also fully supported on the `@body` tag description (e.g., `@body string file to upload format(binary)`).
 
+### Intelligent Schema Inference
+
+The library automatically infers `required` fields for your component schemas based on properties' PHP type-hints, default values, and PHPDocs.
+
+```php
+class User {
+    /** @var string $id */
+    public string $id; // Required (non-nullable native type, no default)
+
+    /** @var string $name */
+    public string $name = 'Anonymous'; // Optional (has default value)
+
+    /** @var string $email */
+    public ?string $email; // Optional (nullable native type)
+
+    /** @var string $bio */
+    public string|null $bio; // Optional (nullable union type)
+
+    /** @var mixed $extra */
+    public mixed $extra; // Optional (mixed type can be null)
+
+    /** @var string $status */
+    public $status; // Required (no native type, but @var type is non-nullable string)
+
+    /** @var string|null $avatar */
+    public $avatar; // Optional (no native type, but @var type is nullable string)
+}
+```
+
+#### Explicit `@required` Tag
+You can override the automatic inference using the `@required` tag:
+- **For member properties (class properties):**
+  Use `@required` as a standalone tag or inline in the description:
+  ```php
+  class User {
+      /**
+       * @var string $email
+       * @required
+       */
+      public ?string $email; // Required because of explicit @required tag
+
+      /** @var string $name Name @required */
+      public ?string $name; // Required because of inline @required
+
+      /**
+       * @var string $status
+       * @required false
+       */
+      public string $status; // Optional because of explicit @required false
+  }
+  ```
+- **For class-level `@property` definitions:**
+  Use `@required $propertyName` in the class docblock or inline `@required`:
+  ```php
+  /**
+   * @property string $name @required
+   * @property string $email
+   * @property string $status
+   * 
+   * @required $email
+   * @required $status false
+   */
+  class User {}
+  ```
+
 ### Route Parameters Handling
 
 The library supports explicit tags and auto-inference (inspired by swaggo).
@@ -207,6 +273,7 @@ public function show(int $id, string $status) {}
 - **Models**:
     - `@property [TYPE] $[NAME] [DESCRIPTION]` (Supports validation tags in description)
     - `@var [TYPE]` (Supports validation tags in description) (for class properties)
+    - `@required` (for member properties) or `@required [PROPERTY_NAME] [true|false]` (for class-level properties or overrides)
     - `@template [NAME]` (for generics)
     - `@extends [TYPE]` or `@use [TYPE]` (for generic arguments)
 

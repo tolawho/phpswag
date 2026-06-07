@@ -14,7 +14,8 @@ class PropertyDefinition
         public ?string $description = null,
         public array $extra = [],
         public ?string $file = null,
-        public ?int $line = null
+        public ?int $line = null,
+        public ?bool $required = null
     ) {
     }
 }

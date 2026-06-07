@@ -377,8 +377,9 @@ class Generator
 
             $properties = $this->resolveAllProperties($schema);
             $propSpecs = [];
+            $requiredProps = [];
             foreach ($properties as $prop) {
-                                $propSchema = $this->applyTypeArguments($prop->schema, $schema->typeArguments);
+                $propSchema = $this->applyTypeArguments($prop->schema, $schema->typeArguments);
 
                 // Apply extra validation attributes to property schema
                 $validationTags = [
@@ -410,12 +411,20 @@ class Generator
                 }
 
                 $propSpecs[$prop->name] = $this->processSchemaOutput($propSchema, $prop->description);
+                if ($prop->required) {
+                    $requiredProps[] = $prop->name;
+                }
             }
 
-            $spec['components']['schemas'][$this->schemaRegistry->getSchemaId($schema->name)] = [
+            $schemaSpec = [
                 'type' => 'object',
                 'properties' => $propSpecs
             ];
+            if (!empty($requiredProps)) {
+                $schemaSpec['required'] = $requiredProps;
+            }
+
+            $spec['components']['schemas'][$this->schemaRegistry->getSchemaId($schema->name)] = $schemaSpec;
         }
 
         return $spec;

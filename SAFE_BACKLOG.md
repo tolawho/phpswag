@@ -123,7 +123,7 @@
 ### Features cho [Epic 5] Developer Experience
 - [x] **[F5.1] Controller-level Metadata Support:** Hỗ trợ @tag, @security, @accept, @produce ở cấp Class.
 - [x] **[F5.2] Enhanced Diagnostics & Error Reporting:** Cải thiện thông báo lỗi với đầy đủ thông tin ngữ cảnh (file, line).
-- [ ] **[F5.3] Intelligent Schema Inference:** Tự động xác định `required` fields dựa trên type-hint và giá trị mặc định.
+- [x] **[F5.3] Intelligent Schema Inference:** Tự động xác định `required` fields dựa trên type-hint và giá trị mặc định.
 - [ ] **[F5.4] Native PHP Enum Support:** Tự động trích xuất các case từ PHP 8.1+ Enums.
 - [ ] **[F5.5] Smart Type Mapping Registry:** Map các class phổ biến (DateTime, Uuid, UploadedFile) sang kiểu dữ liệu OpenAPI tương ứng.
 
@@ -138,9 +138,9 @@
 - [x] **[S5.2.2] User-Friendly Error Messages:** Hiển thị lỗi chi tiết khi không phân giải được class hoặc tag sai cú pháp.
 
 ### Stories cho [F5.3] Intelligent Schema Inference
-- [ ] **[S5.3.1] Nullable-based Required Detection:** Tự động đánh dấu `required: true` nếu type-hint không nullable.
-- [ ] **[S5.3.2] Default Value Inference:** Thuộc tính có giá trị mặc định được coi là optional.
-- [ ] **[S5.3.3] Explicit @required Tag:** Hỗ trợ tag @required để ghi đè logic suy luận.
+- [x] **[S5.3.1] Nullable-based Required Detection:** Tự động đánh dấu `required: true` nếu type-hint không nullable.
+- [x] **[S5.3.2] Default Value Inference:** Thuộc tính có giá trị mặc định được coi là optional.
+- [x] **[S5.3.3] Explicit @required Tag:** Hỗ trợ tag @required để ghi đè logic suy luận.
 
 ### Stories cho [F5.4] Native PHP Enum Support
 - [ ] **[S5.4.1] Enum Detection logic:** Nhận diện class là Enum thông qua Reflection.

@@ -593,6 +593,25 @@ class Core
         $isSchema = false;
         $properties = [];
 
+        // Parse any class-level explicit @required tags targeting properties, e.g. @required $name or @required name
+        $classExplicitRequired = [];
+        foreach ($tags as $t) {
+            if ($t['name'] === '@required') {
+                $val = trim($t['value'] ?? '');
+                if ($val !== '') {
+                    if (preg_match('/^([^\s]+)(?:\s+(.*))?$/', $val, $matches)) {
+                        $propName = ltrim($matches[1], '$');
+                        $optVal = isset($matches[2]) ? trim($matches[2]) : '';
+                        if (strtolower($optVal) === 'false') {
+                            $classExplicitRequired[$propName] = false;
+                        } else {
+                            $classExplicitRequired[$propName] = true;
+                        }
+                    }
+                }
+            }
+        }
+
         foreach ($tags as $tag) {
             if ($tag['name'] === '@property' && isset($tag['type'])) {
                 $isSchema = true;
@@ -609,13 +628,31 @@ class Core
                 $extra = is_array($tag['description']) ? $tag['description'] : [];
                 unset($extra['description']);
 
+                $explicitRequired = $classExplicitRequired[$tag['propertyName']] ?? null;
+                if ($desc !== null && stripos($desc, '@required') !== false) {
+                    $explicitRequired = true;
+                    $desc = preg_replace('/@required\s*/i', '', $desc);
+                    $desc = trim($desc);
+                }
+
+                $hasDefault = isset($extra['default']);
+                $isNullable = $this->isDocTypeNullable($tag['type']);
+                $required = $this->determineRequired(
+                    $tag['propertyName'],
+                    $isNullable,
+                    $explicitRequired,
+                    $hasDefault,
+                    null
+                );
+
                 $properties[] = new PropertyDefinition(
                     $tag['propertyName'],
                     $propertySchema,
                     $desc,
                     $extra,
                     $this->currentlyAnalyzingFile,
-                    $tag['line'] ?? $docStartLine
+                    $tag['line'] ?? $docStartLine,
+                    $required
                 );
             }
         }
@@ -641,13 +678,44 @@ class Core
                         $extra = is_array($pTag['description']) ? $pTag['description'] : [];
                         unset($extra['description']);
 
+                        // Explicit required tag in property docblock
+                        $explicitRequired = null;
+                        foreach ($propTags as $t) {
+                            if ($t['name'] === '@required') {
+                                $val = trim($t['value'] ?? '');
+                                if (strtolower($val) === 'false') {
+                                    $explicitRequired = false;
+                                } else {
+                                    $explicitRequired = true;
+                                }
+                            }
+                        }
+
+                        // Also check if @required is inline in the @var tag's description
+                        if ($desc !== null && stripos($desc, '@required') !== false) {
+                            $explicitRequired = true;
+                            $desc = preg_replace('/@required\s*/i', '', $desc);
+                            $desc = trim($desc);
+                        }
+
+                        $hasDefault = ($member->props[0]->default !== null) || isset($extra['default']);
+                        $isNullable = $this->isDocTypeNullable($pTag['type']);
+                        $required = $this->determineRequired(
+                            $member->props[0]->name->toString(),
+                            $isNullable,
+                            $explicitRequired,
+                            $hasDefault,
+                            $member->type
+                        );
+
                         $properties[] = new PropertyDefinition(
                             $member->props[0]->name->toString(),
                             $propertySchema,
                             $desc,
                             $extra,
                             $this->currentlyAnalyzingFile,
-                            $pTag['line'] ?? $propStartLine
+                            $pTag['line'] ?? $propStartLine,
+                            $required
                         );
                     }
                 }
@@ -1016,5 +1084,78 @@ class Core
         $type = $parts[0] ?? '';
         $desc = $parts[1] ?? '';
         return [$type, $desc];
+    }
+
+    private function isNativeTypeNullable(?Node $type): bool
+    {
+        if ($type === null) {
+            return true;
+        }
+        if ($type instanceof Node\NullableType) {
+            return true;
+        }
+        if ($type instanceof Node\Identifier && strtolower($type->name) === 'mixed') {
+            return true;
+        }
+        if ($type instanceof Node\UnionType) {
+            foreach ($type->types as $subType) {
+                if (
+                    $subType instanceof Node\Identifier &&
+                    in_array(strtolower($subType->name), ['null', 'mixed'])
+                ) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private function isDocTypeNullable(\PHPStan\PhpDocParser\Ast\Type\TypeNode $typeNode): bool
+    {
+        if ($typeNode instanceof \PHPStan\PhpDocParser\Ast\Type\NullableTypeNode) {
+            return true;
+        }
+        if (
+            $typeNode instanceof \PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode &&
+            strtolower($typeNode->name) === 'mixed'
+        ) {
+            return true;
+        }
+        if ($typeNode instanceof \PHPStan\PhpDocParser\Ast\Type\UnionTypeNode) {
+            foreach ($typeNode->types as $type) {
+                if (
+                    $type instanceof \PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode &&
+                    in_array(strtolower($type->name), ['null', 'mixed'])
+                ) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private function determineRequired(
+        string $propertyName,
+        bool $isNullable,
+        ?bool $explicitRequired,
+        bool $hasDefault,
+        ?Node $typeHint
+    ): bool {
+        if ($explicitRequired !== null) {
+            return $explicitRequired;
+        }
+
+        // If it has a default value, it is optional (not required)
+        if ($hasDefault) {
+            return false;
+        }
+
+        // If there is a native type hint, use its nullability
+        if ($typeHint !== null) {
+            return !$this->isNativeTypeNullable($typeHint);
+        }
+
+        // Otherwise, use the PHPDoc nullability
+        return !$isNullable;
     }
 }
