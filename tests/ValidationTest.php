@@ -44,7 +44,7 @@ class User {
 }
 PHP;
 
-        $tempFile = tempnam(sys_get_temp_dir(), 'php-swag-test');
+        $tempFile = tempnam(sys_get_temp_dir(), 'phpswag-test');
         file_put_contents($tempFile, $code);
 
         $yaml = $core->generateYaml([$tempFile]);

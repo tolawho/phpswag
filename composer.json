@@ -1,5 +1,5 @@
 {
-    "name": "php-swag/php-swag",
+    "name": "phpswag/phpswag",
     "description": "A framework-agnostic PHP Swagger/OpenAPI generator",
     "type": "library",
     "license": "MIT",
@@ -29,7 +29,7 @@
     "config": {
         "sort-packages": true
     },
-    "bin": ["bin/php-swag"],
+    "bin": ["bin/phpswag"],
     "scripts": {
         "lint": [
             "phpcs",
