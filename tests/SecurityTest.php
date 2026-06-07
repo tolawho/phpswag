@@ -98,7 +98,7 @@ PHP;
 
         // Check Global Security
         $this->assertStringContainsString('security:', $yaml);
-        $this->assertStringContainsString('MyJwtAuth: {  }', $yaml);
+        $this->assertStringContainsString('MyJwtAuth: [  ]', $yaml);
 
         // Check Scoped Security
         $this->assertStringContainsString('- read', $yaml);
