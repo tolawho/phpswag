@@ -121,33 +121,33 @@
 ## 2. Program Backlog (Features) (Tiếp theo)
 
 ### Features cho [Epic 5] Developer Experience
-- [ ] **[F5.1] Controller-level Metadata Support:** Hỗ trợ @tag, @security, @accept, @produce ở cấp Class.
-- [ ] **[F5.2] Enhanced Diagnostics & Error Reporting:** Cải thiện thông báo lỗi với đầy đủ thông tin ngữ cảnh (file, line).
-- [ ] **[F5.3] Intelligent Schema Inference:** Tự động xác định `required` fields dựa trên type-hint và giá trị mặc định.
-- [ ] **[F5.4] Native PHP Enum Support:** Tự động trích xuất các case từ PHP 8.1+ Enums.
-- [ ] **[F5.5] Smart Type Mapping Registry:** Map các class phổ biến (DateTime, Uuid, UploadedFile) sang kiểu dữ liệu OpenAPI tương ứng.
+- [x] **[F5.1] Controller-level Metadata Support:** Hỗ trợ @tag, @security, @accept, @produce ở cấp Class.
+- [x] **[F5.2] Enhanced Diagnostics & Error Reporting:** Cải thiện thông báo lỗi với đầy đủ thông tin ngữ cảnh (file, line).
+- [x] **[F5.3] Intelligent Schema Inference:** Tự động xác định `required` fields dựa trên type-hint và giá trị mặc định.
+- [x] **[F5.4] Native PHP Enum Support:** Tự động trích xuất các case từ PHP 8.1+ Enums.
+- [x] **[F5.5] Smart Type Mapping Registry:** Map các class phổ biến (DateTime, Uuid, UploadedFile) sang kiểu dữ liệu OpenAPI tương ứng.
 
 ## 3. Team Backlog (User Stories) (Tiếp theo)
 
 ### Stories cho [F5.1] Controller-level Metadata
-- [ ] **[S5.1.1] Class-level Tag Collection:** Thu thập @tag từ class docblock và gộp với tags ở method.
-- [ ] **[S5.1.2] Class-level Security & Content-Type:** Áp dụng @security, @accept, @produce từ class làm mặc định cho tất cả method bên trong, cho phép method ghi đè.
+- [x] **[S5.1.1] Class-level Tag Collection:** Thu thập @tag từ class docblock và gộp với tags ở method.
+- [x] **[S5.1.2] Class-level Security & Content-Type:** Áp dụng @security, @accept, @produce từ class làm mặc định cho tất cả method bên trong, cho phép method ghi đè.
 
 ### Stories cho [F5.2] Enhanced Diagnostics
-- [ ] **[S5.2.1] Source Location Tracking:** Lưu trữ thông tin file và dòng code trong quá trình parse.
-- [ ] **[S5.2.2] User-Friendly Error Messages:** Hiển thị lỗi chi tiết khi không phân giải được class hoặc tag sai cú pháp.
+- [x] **[S5.2.1] Source Location Tracking:** Lưu trữ thông tin file và dòng code trong quá trình parse.
+- [x] **[S5.2.2] User-Friendly Error Messages:** Hiển thị lỗi chi tiết khi không phân giải được class hoặc tag sai cú pháp.
 
 ### Stories cho [F5.3] Intelligent Schema Inference
-- [ ] **[S5.3.1] Nullable-based Required Detection:** Tự động đánh dấu `required: true` nếu type-hint không nullable.
-- [ ] **[S5.3.2] Default Value Inference:** Thuộc tính có giá trị mặc định được coi là optional.
-- [ ] **[S5.3.3] Explicit @required Tag:** Hỗ trợ tag @required để ghi đè logic suy luận.
+- [x] **[S5.3.1] Nullable-based Required Detection:** Tự động đánh dấu `required: true` nếu type-hint không nullable.
+- [x] **[S5.3.2] Default Value Inference:** Thuộc tính có giá trị mặc định được coi là optional.
+- [x] **[S5.3.3] Explicit @required Tag:** Hỗ trợ tag @required để ghi đè logic suy luận.
 
 ### Stories cho [F5.4] Native PHP Enum Support
-- [ ] **[S5.4.1] Enum Detection logic:** Nhận diện class là Enum thông qua Reflection.
-- [ ] **[S5.4.2] BackedEnum Value Extraction:** Tự động lấy `value` cho BackedEnum (string/int).
-- [ ] **[S5.4.3] UnitEnum Name Extraction:** Tự động lấy `name` cho UnitEnum.
+- [x] **[S5.4.1] Enum Detection logic:** Nhận diện class là Enum thông qua Reflection.
+- [x] **[S5.4.2] BackedEnum Value Extraction:** Tự động lấy `value` cho BackedEnum (string/int).
+- [x] **[S5.4.3] UnitEnum Name Extraction:** Tự động lấy `name` cho UnitEnum.
 
 ### Stories cho [F5.5] Smart Type Mapping
-- [ ] **[S5.5.1] Built-in Date/Time Mapping:** Map `DateTimeInterface` sang `string/date-time`.
-- [ ] **[S5.5.2] External Library Support (Optional):** Hỗ trợ mapping cho Uuid (Ramsey/Symfony) nếu class tồn tại.
-- [ ] **[S5.5.3] Binary/File Mapping:** Map các class UploadedFile phổ biến sang `string/binary`.
+- [x] **[S5.5.1] Built-in Date/Time Mapping:** Map `DateTimeInterface` sang `string/date-time`.
+- [x] **[S5.5.2] External Library Support (Optional):** Hỗ trợ mapping cho Uuid (Ramsey/Symfony) nếu class tồn tại.
+- [x] **[S5.5.3] Binary/File Mapping:** Map các class UploadedFile phổ biến sang `string/binary`.

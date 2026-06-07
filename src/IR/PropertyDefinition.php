@@ -12,7 +12,10 @@ class PropertyDefinition
         public string $name,
         public array $schema,
         public ?string $description = null,
-        public array $extra = []
+        public array $extra = [],
+        public ?string $file = null,
+        public ?int $line = null,
+        public ?bool $required = null
     ) {
     }
 }

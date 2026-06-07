@@ -18,7 +18,7 @@ class DocBlockCollector
     /**
      * @return array<int, array<string, mixed>>
      */
-    public function collectTags(string $docComment): array
+    public function collectTags(string $docComment, ?int $startLine = null, ?string $filePath = null): array
     {
         if (empty($docComment)) {
             return [];
@@ -26,7 +26,8 @@ class DocBlockCollector
 
         $tags = [];
         $lines = explode("\n", $docComment);
-        foreach ($lines as $line) {
+        foreach ($lines as $index => $line) {
+            $currentLineNum = $startLine !== null ? ($startLine + $index) : null;
             $line = trim($line, " \t\n\r\0\x0B*/");
             if (empty($line)) {
                 continue;
@@ -44,6 +45,7 @@ class DocBlockCollector
                             : $tagName;
                         $doc = "/** $parseTagName $value */";
                         $node = $this->parser->parse($doc);
+                        $found = false;
                         foreach ($node->getTags() as $tag) {
                              $v = $tag->value;
                             if ($v instanceof \PHPStan\PhpDocParser\Ast\PhpDoc\PropertyTagValueNode) {
@@ -51,28 +53,49 @@ class DocBlockCollector
                                    'name' => $tagName,
                                    'type' => $v->type,
                                    'propertyName' => ltrim($v->propertyName, '$'),
-                                   'description' => $this->parseExtraAttributes($v->description)
+                                   'description' => $this->parseExtraAttributes($v->description),
+                                   'line' => $currentLineNum,
+                                   'file' => $filePath
                                 ];
+                                $found = true;
                             } elseif ($v instanceof \PHPStan\PhpDocParser\Ast\PhpDoc\VarTagValueNode) {
                                 $tags[] = [
                                    'name' => $tagName,
                                    'type' => $v->type,
                                    'propertyName' => $v->variableName ? ltrim($v->variableName, '$') : null,
-                                   'description' => $this->parseExtraAttributes($v->description)
+                                   'description' => $this->parseExtraAttributes($v->description),
+                                   'line' => $currentLineNum,
+                                   'file' => $filePath
                                 ];
+                                $found = true;
                             } elseif ($v instanceof \PHPStan\PhpDocParser\Ast\PhpDoc\ParamTagValueNode) {
                                 $res = [
                                    'name' => $tagName,
                                    'type' => $v->type,
                                    'propertyName' => ltrim($v->parameterName, '$'),
+                                   'line' => $currentLineNum,
+                                   'file' => $filePath
                                 ];
                                 $parsedDesc = $this->parseExtraAttributes($v->description);
                                 $res = array_merge($res, $parsedDesc);
                                 $tags[] = $res;
+                                $found = true;
                             }
                         }
+                        if (!$found) {
+                            throw new \Exception("Could not parse tag value");
+                        }
                     } catch (\Exception $e) {
-                         $tags[] = ['name' => $tagName, 'value' => $value];
+                          throw new \PhpSwag\Exception\DiagnosticException(sprintf(
+                              "Invalid syntax for tag '%s' in %s%s: expected format is '%s TYPE %s\$name%s', got '%s'",
+                              $tagName,
+                              $filePath ?? 'unknown',
+                              $currentLineNum !== null ? " on line $currentLineNum" : "",
+                              $tagName,
+                              $tagName === '@var' ? '[' : '',
+                              $tagName === '@var' ? ']' : '',
+                              $value
+                          ), 0, $e);
                     }
                 } elseif ($tagName === '@body') {
                     // @body [Type] [Description]
@@ -89,13 +112,25 @@ class DocBlockCollector
                         $tags[] = [
                             'name' => '@body',
                             'type' => $type,
-                            'description' => $this->parseExtraAttributes($desc)
+                            'description' => $this->parseExtraAttributes($desc),
+                            'line' => $currentLineNum,
+                            'file' => $filePath
                         ];
+                    } else {
+                        throw new \PhpSwag\Exception\DiagnosticException(sprintf(
+                            "Invalid syntax for tag '@body' in %s%s: "
+                            . "expected format is '@body TYPE [description]', got '%s'",
+                            $filePath ?? 'unknown',
+                            $currentLineNum !== null ? " on line $currentLineNum" : "",
+                            $value
+                        ));
                     }
                 } else {
                     $tags[] = [
                         'name' => $tagName,
-                        'value' => $value
+                        'value' => $value,
+                        'line' => $currentLineNum,
+                        'file' => $filePath
                     ];
                 }
             }

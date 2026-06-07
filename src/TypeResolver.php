@@ -14,30 +14,39 @@ class TypeResolver
 {
     private SchemaRegistry $schemaRegistry;
     private NameResolver $nameResolver;
+    private TypeMappingRegistry $typeMappingRegistry;
     /** @var array<int, string> */
     private array $templates = [];
 
     /**
      * @param array<int, string> $templates
      */
-    public function __construct(SchemaRegistry $schemaRegistry, NameResolver $nameResolver, array $templates = [])
-    {
+    public function __construct(
+        SchemaRegistry $schemaRegistry,
+        NameResolver $nameResolver,
+        array $templates = [],
+        ?TypeMappingRegistry $typeMappingRegistry = null
+    ) {
         $this->schemaRegistry = $schemaRegistry;
         $this->nameResolver = $nameResolver;
         $this->templates = $templates;
+        $this->typeMappingRegistry = $typeMappingRegistry ?? new TypeMappingRegistry();
     }
 
     /**
      * @return array<string, mixed>
      */
-    public function resolve(TypeNode $typeNode): array
+    /**
+     * @return array<string, mixed>
+     */
+    public function resolve(TypeNode $typeNode, ?int $line = null, ?string $file = null): array
     {
         if ($typeNode instanceof IdentifierTypeNode) {
-            return $this->resolveIdentifier($typeNode->name);
+            return $this->resolveIdentifier($typeNode->name, $line, $file);
         }
 
         if ($typeNode instanceof NullableTypeNode) {
-            $resolved = $this->resolve($typeNode->type);
+            $resolved = $this->resolve($typeNode->type, $line, $file);
             $resolved['nullable'] = true;
             return $resolved;
         }
@@ -45,7 +54,7 @@ class TypeResolver
         if ($typeNode instanceof ArrayTypeNode) {
             return [
                 'type' => 'array',
-                'items' => $this->resolve($typeNode->type)
+                'items' => $this->resolve($typeNode->type, $line, $file)
             ];
         }
 
@@ -57,7 +66,7 @@ class TypeResolver
                     $isNullable = true;
                     continue;
                 }
-                $types[] = $this->resolve($type);
+                $types[] = $this->resolve($type, $line, $file);
             }
 
             if (count($types) === 1) {
@@ -79,16 +88,16 @@ class TypeResolver
                 ) {
                     return [
                         'type' => 'object',
-                        'additionalProperties' => $this->resolve($typeNode->genericTypes[1])
+                        'additionalProperties' => $this->resolve($typeNode->genericTypes[1], $line, $file)
                     ];
                 }
                 return [
                     'type' => 'array',
-                    'items' => $this->resolve($typeNode->genericTypes[0])
+                    'items' => $this->resolve($typeNode->genericTypes[0], $line, $file)
                 ];
             }
 
-            return $this->resolveGeneric($typeNode);
+            return $this->resolveGeneric($typeNode, $line, $file);
         }
 
         return ['type' => 'string'];
@@ -97,7 +106,7 @@ class TypeResolver
     /**
      * @return array<string, mixed>
      */
-    private function resolveIdentifier(string $name): array
+    private function resolveIdentifier(string $name, ?int $line = null, ?string $file = null): array
     {
         if (in_array($name, $this->templates)) {
             return ['type' => $name]; // Return template name as "type" to be substituted later
@@ -122,6 +131,19 @@ class TypeResolver
         }
 
         $fqcn = $this->nameResolver->resolve($name);
+        if ($this->typeMappingRegistry->has($fqcn)) {
+            return $this->typeMappingRegistry->get($fqcn) ?? [];
+        }
+
+        if (!$this->schemaRegistry->has($fqcn)) {
+            throw new \PhpSwag\Exception\DiagnosticException(sprintf(
+                "Unresolved class '%s'%s%s",
+                $fqcn,
+                $file !== null ? " in $file" : "",
+                $line !== null ? " on line $line" : ""
+            ));
+        }
+
         return [
             '$ref' => '#/components/schemas/' . $this->schemaRegistry->getSchemaId($fqcn)
         ];
@@ -130,20 +152,20 @@ class TypeResolver
     /**
      * @return array<string, mixed>
      */
-    private function resolveGeneric(GenericTypeNode $typeNode): array
+    private function resolveGeneric(GenericTypeNode $typeNode, ?int $line = null, ?string $file = null): array
     {
         $baseName = $typeNode->type->name;
         $fqcn = $this->nameResolver->resolve($baseName);
 
         $baseSchema = $this->schemaRegistry->get($fqcn);
         if (!$baseSchema || empty($baseSchema->templates)) {
-            return $this->resolveIdentifier($baseName);
+            return $this->resolveIdentifier($baseName, $line, $file);
         }
 
         $args = [];
         $ids = [];
         foreach ($typeNode->genericTypes as $i => $argNode) {
-            $resolvedArg = $this->resolve($argNode);
+            $resolvedArg = $this->resolve($argNode, $line, $file);
             $templateName = $baseSchema->templates[$i] ?? "T$i";
             $args[$templateName] = $resolvedArg;
 
