@@ -113,7 +113,12 @@ class Generator
 
     public function generateYaml(): string
     {
-        return Yaml::dump($this->generateSpec(), 10, 2);
+        $yaml = Yaml::dump($this->generateSpec(), 10, 2, Yaml::DUMP_NUMERIC_KEY_AS_STRING);
+        return preg_replace(
+            '/(?<=\n)(\s+)(?!schema\b)([a-zA-Z0-9_-]+):\s*\{\s*\}\s*(?=\n)/',
+            '$1$2: [  ]',
+            $yaml
+        );
     }
 
     public function generateJson(): string
