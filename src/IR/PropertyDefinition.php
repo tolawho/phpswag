@@ -7,7 +7,8 @@ class PropertyDefinition
     public function __construct(
         public string $name,
         public array $schema,
-        public ?string $description = null
+        public ?string $description = null,
+        public array $extra = []
     ) {
     }
 }

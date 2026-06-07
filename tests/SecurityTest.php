@@ -24,7 +24,9 @@ class SecurityTest extends TestCase
 
     private function removeDirectory($path): void
     {
-        if (!is_dir($path)) return;
+        if (!is_dir($path)) {
+            return;
+        }
         $files = glob($path . '/*');
         foreach ($files as $file) {
             is_dir($file) ? $this->removeDirectory($file) : unlink($file);

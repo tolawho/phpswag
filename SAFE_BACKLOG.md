@@ -71,7 +71,7 @@
 ### Features cho [Epic 4] Professional API Documentation
 - [x] **[F4.1] Global API Metadata Discovery:** Tự động trích xuất @title, @version, @description, @contact.*, @license.*, và @host từ toàn bộ project.
 - [x] **[F4.2] Security & Authentication Support:** Định nghĩa @securityDefinitions (ApiKey/JWT) toàn cục và @security cho endpoint.
-- [ ] **[F4.3] Comprehensive Schema Validation:** Hỗ trợ các tag @minimum, @maximum, @minLength, @maxLength, @pattern, @format, @example cho Model properties và Route parameters.
+- [x] **[F4.3] Comprehensive Schema Validation:** Hỗ trợ các tag @minimum, @maximum, @minLength, @maxLength, @pattern, @format, @example cho Model properties và Route parameters.
 - [ ] **[F4.4] MIME Types & Response Alias:** Hỗ trợ @accept, @produce (mặc định application/json) và alias @success/@failure.
 - [ ] **[F4.5] Advanced Operation Metadata:** Hỗ trợ @operationId, @deprecated và OpenAPI Extensions (x-).
 
@@ -93,9 +93,9 @@
 - [x] **[S4.2.2] Security Requirement Tag:** Áp dụng tag @security cho từng endpoint để chỉ định phương thức bảo mật cần thiết.
 
 ### Stories cho [F4.3] Comprehensive Schema Validation
-- [ ] **[S4.3.1] Validation Tag Extraction:** Trích xuất các ràng buộc (minimum, maxLength, pattern, format, etc.) từ mô tả PHPDoc hoặc tag riêng biệt.
-- [ ] **[S4.3.2] Validation Mapping to OpenAPI:** Chuyển đổi các ràng buộc kỹ thuật sang Schema Object tương ứng.
-- [ ] **[S4.3.3] Example Tag Support:** Hỗ trợ tag @example để hiển thị dữ liệu mẫu trong UI.
+- [x] **[S4.3.1] Validation Tag Extraction:** Trích xuất các ràng buộc (minimum, maxLength, pattern, format, etc.) từ mô tả PHPDoc hoặc tag riêng biệt.
+- [x] **[S4.3.2] Validation Mapping to OpenAPI:** Chuyển đổi các ràng buộc kỹ thuật sang Schema Object tương ứng.
+- [x] **[S4.3.3] Example Tag Support:** Hỗ trợ tag @example để hiển thị dữ liệu mẫu trong UI.
 
 ### Stories cho [F4.4] MIME Types & Response Alias
 - [ ] **[S4.4.1] MIME Type Tags (@accept, @produce):** Cho phép định nghĩa kiểu nội dung cho request/response.

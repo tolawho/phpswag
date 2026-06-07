@@ -36,7 +36,9 @@ class DocBlockCollector
                 if (in_array($tagName, ['@property', '@var', '@return', '@path', '@query', '@header', '@cookie'])) {
                     try {
                         // For @path, @query, etc., we treat them similarly to @param for parsing convenience
-                        $parseTagName = in_array($tagName, ['@path', '@query', '@header', '@cookie']) ? '@param' : $tagName;
+                        $parseTagName = in_array($tagName, ['@path', '@query', '@header', '@cookie'])
+                            ? '@param'
+                            : $tagName;
                         $doc = "/** $parseTagName $value */";
                         $node = $this->parser->parse($doc);
                         foreach ($node->getTags() as $tag) {
@@ -103,16 +105,28 @@ class DocBlockCollector
     {
         $res = ['description' => $description];
 
-        // Parse enum(a,b,c)
-        if (preg_match('/enum\(([^)]+)\)/', $description, $matches)) {
-            $res['enum'] = array_map('trim', explode(',', $matches[1]));
-            $res['description'] = trim(str_replace($matches[0], '', $res['description']));
-        }
+        $attributes = [
+        'enum' => '/enum\(([^)]+)\)/',
+        'default' => '/default\(([^)]+)\)/',
+        'minimum' => '/minimum\(([^)]+)\)/',
+        'maximum' => '/maximum\(([^)]+)\)/',
+        'minLength' => '/minLength\(([^)]+)\)/',
+        'maxLength' => '/maxLength\(([^)]+)\)/',
+        'pattern' => '/pattern\(([^)]+)\)/',
+        'format' => '/format\(([^)]+)\)/',
+        'example' => '/example\(([^)]+)\)/',
+        ];
 
-        // Parse default(value)
-        if (preg_match('/default\(([^)]+)\)/', $description, $matches)) {
-            $res['default'] = trim($matches[1]);
-            $res['description'] = trim(str_replace($matches[0], '', $res['description']));
+        foreach ($attributes as $key => $pattern) {
+            if (preg_match($pattern, $res['description'] ?? '', $matches)) {
+                $val = trim($matches[1]);
+                if ($key === 'enum') {
+                    $res[$key] = array_map('trim', explode(',', $val));
+                } else {
+                    $res[$key] = $val;
+                }
+                $res['description'] = trim(str_replace($matches[0], '', $res['description']));
+            }
         }
 
         return $res;

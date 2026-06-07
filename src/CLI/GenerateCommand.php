@@ -20,7 +20,13 @@ class GenerateCommand extends Command
             ->addOption('path', 'p', InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Path(s) to scan')
             ->addOption('output', 'o', InputOption::VALUE_REQUIRED, 'Output file path (default: stdout)')
             ->addOption('format', 'f', InputOption::VALUE_REQUIRED, 'Output format (yaml or json)', 'yaml')
-            ->addOption('openapi-version', null, InputOption::VALUE_REQUIRED, 'OpenAPI version (3.0.0 or 3.1.0)', '3.0.0')
+            ->addOption(
+                'openapi-version',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'OpenAPI version (3.0.0 or 3.1.0)',
+                '3.0.0'
+            )
             ->addOption('filter-unused', null, InputOption::VALUE_NONE, 'Filter unused schemas')
             ->addOption('title', null, InputOption::VALUE_REQUIRED, 'API Title')
             ->addOption('api-version', null, InputOption::VALUE_REQUIRED, 'API Version')

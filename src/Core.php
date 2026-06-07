@@ -125,23 +125,28 @@ class Core
 
                 $isGlobalBlock = false;
                 foreach ($tags as $tag) {
-                    if (in_array($tag['name'], ['@title', '@version', '@description', '@host']) ||
+                    if (
+                        in_array($tag['name'], ['@title', '@version', '@description', '@host']) ||
                         str_starts_with($tag['name'], '@contact.') ||
                         str_starts_with($tag['name'], '@license.') ||
-                        str_starts_with($tag['name'], '@securityDefinitions.')) {
+                        str_starts_with($tag['name'], '@securityDefinitions.')
+                    ) {
                         $isGlobalBlock = true;
                         break;
                     }
                 }
 
-                if (!$isGlobalBlock) continue;
+                if (!$isGlobalBlock) {
+                    continue;
+                }
 
                 foreach ($tags as $tag) {
                     $tagName = $tag['name'];
-                    if (in_array($tagName, ['@title', '@version', '@description', '@host']) ||
+                    if (
+                        in_array($tagName, ['@title', '@version', '@description', '@host']) ||
                         str_starts_with($tagName, '@contact.') ||
-                        str_starts_with($tagName, '@license.')) {
-
+                        str_starts_with($tagName, '@license.')
+                    ) {
                         $val = $tag['value'] ?? '';
                         if (isset($this->globalMetadata[$tagName]) && $this->globalMetadata[$tagName] !== $val) {
                             throw new \Exception(sprintf(
@@ -168,7 +173,10 @@ class Core
                             'bearerFormat' => 'JWT'
                         ];
                     } elseif ($tagName === '@security') {
-                        $this->globalSecurity = array_merge($this->globalSecurity, $this->parseSecurityTag($tag['value']));
+                        $this->globalSecurity = array_merge(
+                            $this->globalSecurity,
+                            $this->parseSecurityTag($tag['value'])
+                        );
                     }
                 }
             }
@@ -186,7 +194,9 @@ class Core
         $currentGroup = [];
         foreach ($parts as $part) {
             $part = trim($part);
-            if (empty($part)) continue;
+            if (empty($part)) {
+                continue;
+            }
 
             if (preg_match('/^([^\[]+)(?:\[(.*)\])?$/', $part, $matches)) {
                 $name = trim($matches[1]);
@@ -207,8 +217,11 @@ class Core
         $depth = 0;
         for ($i = 0; $i < strlen($str); $i++) {
             $char = $str[$i];
-            if ($char === '[') $depth++;
-            elseif ($char === ']') $depth--;
+            if ($char === '[') {
+                $depth++;
+            } elseif ($char === ']') {
+                $depth--;
+            }
 
             if ($char === ',' && $depth === 0) {
                 $parts[] = $current;
@@ -239,16 +252,26 @@ class Core
         }
 
         $contact = [];
-        if (isset($this->globalMetadata['@contact.name'])) $contact['name'] = $this->globalMetadata['@contact.name'];
-        if (isset($this->globalMetadata['@contact.email'])) $contact['email'] = $this->globalMetadata['@contact.email'];
-        if (isset($this->globalMetadata['@contact.url'])) $contact['url'] = $this->globalMetadata['@contact.url'];
+        if (isset($this->globalMetadata['@contact.name'])) {
+            $contact['name'] = $this->globalMetadata['@contact.name'];
+        }
+        if (isset($this->globalMetadata['@contact.email'])) {
+            $contact['email'] = $this->globalMetadata['@contact.email'];
+        }
+        if (isset($this->globalMetadata['@contact.url'])) {
+            $contact['url'] = $this->globalMetadata['@contact.url'];
+        }
         if (!empty($contact)) {
             $this->generator->setContact($contact);
         }
 
         $license = [];
-        if (isset($this->globalMetadata['@license.name'])) $license['name'] = $this->globalMetadata['@license.name'];
-        if (isset($this->globalMetadata['@license.url'])) $license['url'] = $this->globalMetadata['@license.url'];
+        if (isset($this->globalMetadata['@license.name'])) {
+            $license['name'] = $this->globalMetadata['@license.name'];
+        }
+        if (isset($this->globalMetadata['@license.url'])) {
+            $license['url'] = $this->globalMetadata['@license.url'];
+        }
         if (!empty($license)) {
             $this->generator->setLicense($license);
         }
@@ -351,12 +374,18 @@ class Core
                 $isSchema = true;
                 $propertySchema = $typeResolver->resolve($tag['type']);
 
-                $desc = is_array($tag['description']) ? ($tag['description']['description'] ?? null) : ($tag['description'] ?? null);
+                $desc = is_array($tag['description'])
+                    ? ($tag['description']['description'] ?? null)
+                    : ($tag['description'] ?? null);
+
+                                $extra = is_array($tag['description']) ? $tag['description'] : [];
+                unset($extra['description']);
 
                 $properties[] = new PropertyDefinition(
                     $tag['propertyName'],
                     $propertySchema,
-                    $desc
+                    $desc,
+                    $extra
                 );
             }
         }
@@ -370,12 +399,18 @@ class Core
                     if ($pTag['name'] === '@var' && isset($pTag['type'])) {
                         $propertySchema = $typeResolver->resolve($pTag['type']);
 
-                        $desc = is_array($pTag['description']) ? ($pTag['description']['description'] ?? null) : ($pTag['description'] ?? null);
+                        $desc = is_array($pTag['description'])
+                            ? ($pTag['description']['description'] ?? null)
+                            : ($pTag['description'] ?? null);
+
+                                                $extra = is_array($pTag['description']) ? $pTag['description'] : [];
+                        unset($extra['description']);
 
                         $properties[] = new PropertyDefinition(
                             $member->props[0]->name->toString(),
                             $propertySchema,
-                            $desc
+                            $desc,
+                            $extra
                         );
                     }
                 }
@@ -435,7 +470,9 @@ class Core
             } elseif ($tag['name'] === '@body') {
                 $requestBody = [
                     'schema' => $typeResolver->resolve($tag['type']),
-                    'description' => is_array($tag['description']) ? ($tag['description']['description'] ?? null) : ($tag['description'] ?? null)
+                    'description' => is_array($tag['description'])
+                        ? ($tag['description']['description'] ?? null)
+                        : ($tag['description'] ?? null)
                 ];
             } elseif ($tag['name'] === '@security') {
                 $security = array_merge($security, $this->parseSecurityTag($tag['value']));
@@ -458,7 +495,9 @@ class Core
                         break;
                     }
                 }
-                if ($exists) continue;
+                if ($exists) {
+                    continue;
+                }
 
                 $type = 'mixed';
                 if ($param->type instanceof Node\Identifier) {

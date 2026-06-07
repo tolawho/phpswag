@@ -8,6 +8,7 @@ A framework-agnostic PHP Swagger/OpenAPI generator that uses static analysis (AS
 - **Modern PHP Support**: Handles namespaces, use aliases, and complex types.
 - **Global API Metadata Discovery**: Automatically extracts `@title`, `@version`, `@description`, `@contact.*`, `@license.*`, and `@host` from any file.
 - **Security & Authentication**: Define global security schemes (ApiKey, JWT) and apply them to endpoints or globally.
+- **Comprehensive Schema Validation**: Support for `minimum`, `maximum`, `minLength`, `maxLength`, `pattern`, `format`, and `example` directly in PHPDoc.
 - **Auto-inference**: Automatically resolve route parameters and request bodies from method signatures.
 - **Advanced Type Resolution**:
     - Primitives: `int`, `string`, `bool`, `float`.
@@ -91,6 +92,26 @@ class Controller {
 - **OR logic**: Use multiple `@security` tags on a method.
 - **AND logic**: Use a single tag with comma-separated schemes: `@security Key1, Key2`.
 
+
+### Validation & Schema Metadata
+
+You can add validation constraints and metadata directly in the description of `@property`, `@var`, `@query`, `@path`, etc., using a simple function-like syntax.
+
+```php
+/**
+ * @query int $age User age minimum(18) maximum(100) default(20)
+ * @query string $email User email format(email) example(user@example.com)
+ * @query string $code Auth code pattern(^[A-Z0-9]{6}$) minLength(6) maxLength(6)
+ */
+```
+
+Supported constraints:
+- **Numeric**: `minimum(n)`, `maximum(n)`
+- **String**: `minLength(n)`, `maxLength(n)`, `pattern(regex)`, `format(type)`
+- **Common**: `enum(a,b,c)`, `default(value)`, `example(value)`
+
+Values are automatically cast to their appropriate types (integers, floats, or strings) in the final OpenAPI output.
+
 ### Route Parameters Handling
 
 The library supports explicit tags and auto-inference (inspired by swaggo).
@@ -136,8 +157,8 @@ public function show(int $id, string $status) {}
     - `@body [TYPE] [DESC]`
     - `@response [CODE] [TYPE]` (e.g., `@response 200 ApiResponse<User[]>`)
 - **Models**:
-    - `@property [TYPE] $[NAME] [DESCRIPTION]`
-    - `@var [TYPE]` (for class properties)
+    - `@property [TYPE] $[NAME] [DESCRIPTION]` (Supports validation tags in description)
+    - `@var [TYPE]` (Supports validation tags in description) (for class properties)
     - `@template [NAME]` (for generics)
     - `@extends [TYPE]` or `@use [TYPE]` (for generic arguments)
 
