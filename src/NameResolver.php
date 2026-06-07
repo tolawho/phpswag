@@ -10,8 +10,12 @@ use PhpParser\NodeVisitorAbstract;
 class NameResolver extends NodeVisitorAbstract
 {
     private string $currentNamespace = '';
+    /** @var array<string, string> */
     private array $useAliases = [];
 
+    /**
+     * @return int|Node|null
+     */
     public function enterNode(Node $node)
     {
         if ($node instanceof Namespace_) {
@@ -23,6 +27,7 @@ class NameResolver extends NodeVisitorAbstract
                 $this->useAliases[$alias] = $use->name->toString();
             }
         }
+        return null;
     }
 
     public function resolve(string $name): string
@@ -57,6 +62,9 @@ class NameResolver extends NodeVisitorAbstract
         return $this->currentNamespace;
     }
 
+    /**
+     * @return array<string, string>
+     */
     public function getUseAliases(): array
     {
         return $this->useAliases;

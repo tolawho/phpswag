@@ -15,6 +15,9 @@ class DocBlockCollector
         $this->parser = new DocBlockParser();
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function collectTags(string $docComment): array
     {
         if (empty($docComment)) {
@@ -101,6 +104,9 @@ class DocBlockCollector
         return $tags;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function parseExtraAttributes(string $description): array
     {
         $res = ['description' => $description];
@@ -118,7 +124,7 @@ class DocBlockCollector
         ];
 
         foreach ($attributes as $key => $pattern) {
-            if (preg_match($pattern, $res['description'] ?? '', $matches)) {
+            if (preg_match($pattern, $res['description'], $matches)) {
                 $val = trim($matches[1]);
                 if ($key === 'enum') {
                     $res[$key] = array_map('trim', explode(',', $val));
@@ -146,10 +152,7 @@ class DocBlockCollector
             $innerNodes = [];
             $parts = $this->splitByComma($inner);
             foreach ($parts as $part) {
-                $node = $this->parseType(trim($part));
-                if ($node) {
-                    $innerNodes[] = $node;
-                }
+                $innerNodes[] = $this->parseType(trim($part));
             }
 
             return new GenericTypeNode(
@@ -161,6 +164,9 @@ class DocBlockCollector
         return new IdentifierTypeNode($typeString);
     }
 
+    /**
+     * @return array<int, string>
+     */
     private function splitByComma(string $str): array
     {
         $parts = [];

@@ -16,6 +16,9 @@ class Parser
         $this->parser = (new ParserFactory())->create(ParserFactory::PREFER_PHP7);
     }
 
+    /**
+     * @return array<int, \PhpParser\Node\Stmt>
+     */
     public function parse(string $code): array
     {
         try {
@@ -29,7 +32,9 @@ class Parser
             $traverser = new NodeTraverser();
             $nameResolver = new PhpParserNameResolver();
             $traverser->addVisitor($nameResolver);
-            return $traverser->traverse($stmts);
+            /** @var array<int, \PhpParser\Node\Stmt> $resolvedStmts */
+            $resolvedStmts = $traverser->traverse($stmts);
+            return $resolvedStmts;
         } catch (Error $e) {
             // Handle parse error
             return [];

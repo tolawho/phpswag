@@ -14,8 +14,12 @@ class TypeResolver
 {
     private SchemaRegistry $schemaRegistry;
     private NameResolver $nameResolver;
+    /** @var array<int, string> */
     private array $templates = [];
 
+    /**
+     * @param array<int, string> $templates
+     */
     public function __construct(SchemaRegistry $schemaRegistry, NameResolver $nameResolver, array $templates = [])
     {
         $this->schemaRegistry = $schemaRegistry;
@@ -23,6 +27,9 @@ class TypeResolver
         $this->templates = $templates;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function resolve(TypeNode $typeNode): array
     {
         if ($typeNode instanceof IdentifierTypeNode) {
@@ -77,6 +84,9 @@ class TypeResolver
         return ['type' => 'string'];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function resolveIdentifier(string $name): array
     {
         if (in_array($name, $this->templates)) {
@@ -96,8 +106,9 @@ class TypeResolver
             'void' => null,
         ];
 
-        if (isset($map[$lowered])) {
-            return $map[$lowered] ? ['type' => $map[$lowered]] : [];
+        if (array_key_exists($lowered, $map)) {
+            $mappedVal = $map[$lowered];
+            return $mappedVal !== null ? ['type' => $mappedVal] : [];
         }
 
         $fqcn = $this->nameResolver->resolve($name);
@@ -106,6 +117,9 @@ class TypeResolver
         ];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function resolveGeneric(GenericTypeNode $typeNode): array
     {
         $baseName = $typeNode->type->name;

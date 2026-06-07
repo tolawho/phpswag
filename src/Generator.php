@@ -2,12 +2,14 @@
 
 namespace PhpSwag;
 
+use PhpSwag\IR\PropertyDefinition;
 use PhpSwag\IR\RouteDefinition;
 use PhpSwag\IR\SchemaDefinition;
 use Symfony\Component\Yaml\Yaml;
 
 class Generator
 {
+    /** @var array<int, RouteDefinition> */
     private array $routes = [];
     private SchemaRegistry $schemaRegistry;
     private string $openApiVersion = '3.0.0';
@@ -15,10 +17,15 @@ class Generator
     private string $title = 'API Documentation';
     private string $apiVersion = '1.0.0';
     private ?string $description = null;
+    /** @var array<string, mixed>|null */
     private ?array $contact = null;
+    /** @var array<string, mixed>|null */
     private ?array $license = null;
+    /** @var array<int, array<string, mixed>> */
     private array $servers = [];
+    /** @var array<string, array<string, mixed>> */
     private array $securitySchemes = [];
+    /** @var array<int, array<string, array<int, string>>> */
     private array $globalSecurity = [];
 
     public function __construct(SchemaRegistry $schemaRegistry)
@@ -51,26 +58,41 @@ class Generator
         $this->description = $description;
     }
 
+    /**
+     * @param array<string, mixed>|null $contact
+     */
     public function setContact(?array $contact): void
     {
         $this->contact = $contact;
     }
 
+    /**
+     * @param array<string, mixed>|null $license
+     */
     public function setLicense(?array $license): void
     {
         $this->license = $license;
     }
 
+    /**
+     * @param array<int, array<string, mixed>> $servers
+     */
     public function setServers(array $servers): void
     {
         $this->servers = $servers;
     }
 
+    /**
+     * @param array<string, array<string, mixed>> $schemes
+     */
     public function setSecuritySchemes(array $schemes): void
     {
         $this->securitySchemes = $schemes;
     }
 
+    /**
+     * @param array<int, array<string, array<int, string>>> $security
+     */
     public function setGlobalSecurity(array $security): void
     {
         $this->globalSecurity = $security;
@@ -88,9 +110,13 @@ class Generator
 
     public function generateJson(): string
     {
-        return json_encode($this->generateSpec(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        $json = json_encode($this->generateSpec(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        return $json !== false ? $json : '{}';
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function generateSpec(): array
     {
         $spec = [
@@ -187,7 +213,7 @@ class Generator
                                 )
                             ) {
                                 $val = is_numeric($val)
-                                    ? (strpos($val, '.') !== false ? (float)$val : (int)$val)
+                                    ? (strpos((string)$val, '.') !== false ? (float)$val : (int)$val)
                                     : $val;
                             }
                             $schema[$vTag] = $val;
@@ -280,7 +306,7 @@ class Generator
                             )
                         ) {
                             $val = is_numeric($val)
-                                ? (strpos($val, '.') !== false ? (float)$val : (int)$val)
+                                ? (strpos((string)$val, '.') !== false ? (float)$val : (int)$val)
                                 : $val;
                         }
                         $propSchema[$vTag] = $val;
@@ -299,6 +325,10 @@ class Generator
         return $spec;
     }
 
+    /**
+     * @param array<string, mixed> $schema
+     * @return array<string, mixed>
+     */
     private function processSchemaOutput(array $schema, ?string $description = null): array
     {
         if ($this->openApiVersion === '3.1.0') {
@@ -341,6 +371,9 @@ class Generator
         return $schema;
     }
 
+    /**
+     * @return array<int, PropertyDefinition>
+     */
     private function resolveAllProperties(SchemaDefinition $schema): array
     {
         $properties = [];
@@ -373,21 +406,28 @@ class Generator
         return array_values($properties);
     }
 
+    /**
+     * @param array<string, mixed> $schema
+     * @param array<string, array<string, mixed>> $typeArgs
+     * @return array<string, mixed>
+     */
     private function applyTypeArguments(array $schema, array $typeArgs): array
     {
         if (empty($typeArgs)) {
             return $schema;
         }
 
-        if (isset($schema['type']) && is_string($schema['type']) && isset($typeArgs[$schema['type']])) {
-             $substituted = $typeArgs[$schema['type']];
+        $type = $schema['type'] ?? null;
+
+        if (is_string($type) && isset($typeArgs[$type])) {
+             $substituted = $typeArgs[$type];
             if (isset($schema['nullable']) && $schema['nullable']) {
                 $substituted['nullable'] = true;
             }
              return $substituted;
         }
 
-        if (isset($schema['type']) && $schema['type'] === 'array' && isset($schema['items'])) {
+        if ($type === 'array' && isset($schema['items'])) {
             $schema['items'] = $this->applyTypeArguments($schema['items'], $typeArgs);
         }
 
@@ -402,6 +442,9 @@ class Generator
         return $schema;
     }
 
+    /**
+     * @return array<int, SchemaDefinition>
+     */
     private function getUsedSchemas(): array
     {
         $usedFqcns = [];
@@ -443,6 +486,10 @@ class Generator
         return array_values($usedSchemas);
     }
 
+    /**
+     * @param array<string, mixed> $schema
+     * @param array<int, string> $usedFqcns
+     */
     private function collectFqcnsFromSchema(array $schema, array &$usedFqcns): void
     {
         if (isset($schema['$ref'])) {

@@ -26,11 +26,16 @@ class Core
 
     private bool $isAnalyzed = false;
 
+    /** @var array<string, mixed> */
     private array $globalMetadata = [];
+    /** @var array<string, string> */
     private array $metadataSources = [];
+    /** @var array<string, mixed> */
     private array $cliOverrides = [];
 
+    /** @var array<string, array<string, mixed>> */
     private array $securitySchemes = [];
+    /** @var array<int, array<string, array<int, string>>> */
     private array $globalSecurity = [];
 
     public function __construct()
@@ -52,23 +57,35 @@ class Core
         $this->generator->setFilterUnusedSchemas($filter);
     }
 
+    /**
+     * @param array<int, string> $paths
+     */
     public function generate(array $paths): string
     {
         return $this->generateYaml($paths);
     }
 
+    /**
+     * @param array<int, string> $paths
+     */
     public function generateYaml(array $paths): string
     {
         $this->analyze($paths);
         return $this->generator->generateYaml();
     }
 
+    /**
+     * @param array<int, string> $paths
+     */
     public function generateJson(array $paths): string
     {
         $this->analyze($paths);
         return $this->generator->generateJson();
     }
 
+    /**
+     * @param array<int, string> $paths
+     */
     private function analyze(array $paths): void
     {
         if ($this->isAnalyzed) {
@@ -94,6 +111,9 @@ class Core
     private function discoverFile(string $filePath): void
     {
         $code = file_get_contents($filePath);
+        if ($code === false) {
+            return;
+        }
         $stmts = $this->parser->parse($code);
 
         // Check for global metadata in comments
@@ -183,6 +203,9 @@ class Core
         }
     }
 
+    /**
+     * @return array<int, array<string, array<int, string>>>
+     */
     private function parseSecurityTag(string $value): array
     {
         if (trim($value) === '') {
@@ -210,6 +233,9 @@ class Core
         return $requirements;
     }
 
+    /**
+     * @return array<int, string>
+     */
     private function splitCommasOutsideBrackets(string $str): array
     {
         $parts = [];
@@ -456,9 +482,7 @@ class Core
                     $code = $matches[1];
                     $typeToParse = trim($matches[2]);
                     $typeNode = $this->docCollector->parseType($typeToParse);
-                    if ($typeNode) {
-                        $responses[$code] = $typeResolver->resolve($typeNode);
-                    }
+                    $responses[$code] = $typeResolver->resolve($typeNode);
                 }
             } elseif (in_array($tag['name'], ['@path', '@query', '@header', '@cookie'])) {
                 $in = substr($tag['name'], 1);
@@ -485,6 +509,9 @@ class Core
 
             // Auto-inference from method parameters
             foreach ($member->params as $param) {
+                if (!$param->var instanceof Node\Expr\Variable || !is_string($param->var->name)) {
+                    continue;
+                }
                 $paramName = $param->var->name;
 
                 // Skip if already defined by explicit tags
@@ -565,16 +592,25 @@ class Core
         $this->cliOverrides['description'] = $description;
     }
 
+    /**
+     * @param array<string, mixed>|null $contact
+     */
     public function setContact(?array $contact): void
     {
         $this->generator->setContact($contact);
     }
 
+    /**
+     * @param array<string, mixed>|null $license
+     */
     public function setLicense(?array $license): void
     {
         $this->generator->setLicense($license);
     }
 
+    /**
+     * @param array<int, array<string, mixed>> $servers
+     */
     public function setServers(array $servers): void
     {
         if (isset($servers[0]['url'])) {
