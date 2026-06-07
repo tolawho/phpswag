@@ -89,7 +89,7 @@ class DocBlockCollector
                         $tags[] = [
                             'name' => '@body',
                             'type' => $type,
-                            'description' => $desc
+                            'description' => $this->parseExtraAttributes($desc)
                         ];
                     }
                 } else {

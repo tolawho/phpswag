@@ -72,6 +72,16 @@ class TypeResolver
 
         if ($typeNode instanceof GenericTypeNode) {
             if ($typeNode->type->name === 'array' || $typeNode->type->name === 'list') {
+                if (
+                    count($typeNode->genericTypes) === 2 &&
+                    $typeNode->genericTypes[0] instanceof IdentifierTypeNode &&
+                    $typeNode->genericTypes[0]->name === 'string'
+                ) {
+                    return [
+                        'type' => 'object',
+                        'additionalProperties' => $this->resolve($typeNode->genericTypes[1])
+                    ];
+                }
                 return [
                     'type' => 'array',
                     'items' => $this->resolve($typeNode->genericTypes[0])

@@ -3,10 +3,9 @@
 namespace App\Models;
 
 /**
- * @template T
- * @property T $data Response payload
- * @property string $status Status code (success/error)
- * @property string|null $message Optional message
+ * @property int $code format(int32)
+ * @property string $type
+ * @property string $message
  */
 class ApiResponse
 {
