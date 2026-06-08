@@ -50,7 +50,7 @@ class GenerateCommand extends Command
             return Command::FAILURE;
         }
 
-        $core = new Core();
+        $core = Core::createDefault();
         $core->setOpenApiVersion($input->getOption('openapi-version'));
 
         $filterUnused = $input->getOption('filter-unused');
