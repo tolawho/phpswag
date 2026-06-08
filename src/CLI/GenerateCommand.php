@@ -45,54 +45,129 @@ class GenerateCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $paths = $input->getOption('path');
+        $configFile = 'phpswag.yaml';
+        $config = [];
+        if (file_exists($configFile)) {
+            try {
+                $config = \Symfony\Component\Yaml\Yaml::parseFile($configFile);
+                if (!is_array($config)) {
+                    $config = [];
+                }
+            } catch (\Exception $e) {
+                $output->writeln(sprintf(
+                    '<error>Error parsing configuration file "%s": %s</error>',
+                    $configFile,
+                    $e->getMessage()
+                ));
+                return Command::FAILURE;
+            }
+        }
+
         if (empty($paths)) {
-            $output->writeln('<error>At least one --path is required.</error>');
+            $paths = $config['paths'] ?? [];
+        }
+
+        if (empty($paths)) {
+            $output->writeln('<error>At least one --path is required or defined in phpswag.yaml.</error>');
             return Command::FAILURE;
         }
 
-        $core = Core::createDefault();
-        $core->setOpenApiVersion($input->getOption('openapi-version'));
+        try {
+            $core = Core::createDefault();
 
-        $filterUnused = $input->getOption('filter-unused');
-        if ($filterUnused === null) {
-            $filterUnused = true;
-        } else {
-            $filterUnused = filter_var($filterUnused, FILTER_VALIDATE_BOOLEAN);
-        }
-        $core->setFilterUnusedSchemas($filterUnused);
+            // OpenAPI Version
+            $openapiVersion = $input->getOption('openapi-version');
+            if ($openapiVersion === '3.0.0' && isset($config['openapi_version'])) {
+                $openapiVersion = $config['openapi_version'];
+            }
+            $core->setOpenApiVersion($openapiVersion);
 
-        if ($input->getOption('cache')) {
-            $core->enableCache($input->getOption('cache-file') ?: './.phpswag-cache');
-        }
+            // Filter unused schemas
+            $filterUnusedOption = $input->getOption('filter-unused');
+            if ($filterUnusedOption === 'true' && isset($config['filter_unused'])) {
+                $filterUnused = (bool)$config['filter_unused'];
+            } else {
+                $filterUnused = filter_var($filterUnusedOption, FILTER_VALIDATE_BOOLEAN);
+            }
+            $core->setFilterUnusedSchemas($filterUnused);
 
-        if ($title = $input->getOption('title')) {
-            $core->setTitle($title);
-        }
-        if ($apiVersion = $input->getOption('api-version')) {
-            $core->setApiVersion($apiVersion);
-        }
-        if ($description = $input->getOption('description')) {
-            $core->setDescription($description);
-        }
-        if ($host = $input->getOption('host')) {
-            $core->setServers([['url' => $host]]);
-        }
+            // Cache
+            $enableCache = $input->getOption('cache');
+            if ($enableCache === false && isset($config['cache'])) {
+                $enableCache = (bool)$config['cache'];
+            }
+            if ($enableCache) {
+                $cacheFile = $input->getOption('cache-file');
+                if ($cacheFile === './.phpswag-cache' && isset($config['cache_file'])) {
+                    $cacheFile = $config['cache_file'];
+                }
+                $core->enableCache($cacheFile ?: './.phpswag-cache');
+            }
 
-        $format = strtolower($input->getOption('format'));
-        if ($format === 'json') {
-            $result = $core->generateJson($paths);
-        } else {
-            $result = $core->generateYaml($paths);
-        }
+            if ($title = $input->getOption('title')) {
+                $core->setTitle($title);
+            }
+            if ($apiVersion = $input->getOption('api-version')) {
+                $core->setApiVersion($apiVersion);
+            }
+            if ($description = $input->getOption('description')) {
+                $core->setDescription($description);
+            }
+            if ($host = $input->getOption('host')) {
+                $core->setServers([['url' => $host]]);
+            }
 
-        $outputPath = $input->getOption('output');
-        if ($outputPath) {
-            file_put_contents($outputPath, $result);
-            $output->writeln(sprintf('<info>Documentation generated to %s</info>', $outputPath));
-        } else {
-            $output->write($result);
-        }
+            // Format
+            $format = strtolower($input->getOption('format'));
+            if ($format === 'yaml' && isset($config['format'])) {
+                $format = strtolower($config['format']);
+            }
 
-        return Command::SUCCESS;
+            if ($format === 'json') {
+                $result = $core->generateJson($paths);
+            } else {
+                $result = $core->generateYaml($paths);
+            }
+
+            // Output destination
+            $outputPath = $input->getOption('output');
+            if ($outputPath === null && isset($config['output'])) {
+                $outputPath = $config['output'];
+            }
+
+            if ($outputPath) {
+                file_put_contents($outputPath, $result);
+                $output->writeln(sprintf('<info>Documentation generated to %s</info>', $outputPath));
+            } else {
+                $output->write($result);
+            }
+
+            return Command::SUCCESS;
+        } catch (\PhpSwag\Exception\DiagnosticException $e) {
+            $output->writeln('');
+            $output->writeln('<error> ❌ Lỗi Phân Tích (Analysis Error) </error>');
+            $output->writeln(sprintf('<error> %s </error>', $e->getMessage()));
+            if ($e->getFilePath()) {
+                $realPath = realpath($e->getFilePath()) ?: $e->getFilePath();
+                $link = 'file://' . $realPath;
+                if ($e->getLineNumber()) {
+                    $link .= '#L' . $e->getLineNumber();
+                    $output->writeln(sprintf(
+                        '<comment>Vị trí lỗi:</comment> <href=%s>%s:%d</>',
+                        $link,
+                        $realPath,
+                        $e->getLineNumber()
+                    ));
+                } else {
+                    $output->writeln(sprintf(
+                        '<comment>Vị trí lỗi:</comment> <href=%s>%s</>',
+                        $link,
+                        $realPath
+                    ));
+                }
+            }
+            $output->writeln('');
+            return Command::FAILURE;
+        }
     }
 }

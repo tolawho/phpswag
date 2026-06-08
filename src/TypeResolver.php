@@ -136,12 +136,13 @@ class TypeResolver
         }
 
         if (!$this->schemaRegistry->has($fqcn)) {
-            throw new \PhpSwag\Exception\DiagnosticException(sprintf(
-                "Unresolved class '%s'%s%s",
-                $fqcn,
-                $file !== null ? " in $file" : "",
-                $line !== null ? " on line $line" : ""
-            ));
+            throw new \PhpSwag\Exception\DiagnosticException(
+                sprintf("Unresolved class '%s'", $fqcn),
+                0,
+                null,
+                $file,
+                $line
+            );
         }
 
         return [

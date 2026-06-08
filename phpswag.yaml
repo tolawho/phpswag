@@ -1,0 +1,6 @@
+paths:
+  - examples
+openapi_version: 3.0.0
+format: yaml
+output: swagger.yaml
+filter_unused: false

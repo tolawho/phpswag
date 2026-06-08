@@ -18,12 +18,13 @@ class RouteTagParser implements TagParserInterface
         if (preg_match('/^(GET|POST|PUT|DELETE|PATCH)\s+(\S+)/i', $value, $matches)) {
             $context->routeTag = strtoupper($matches[1]) . ' ' . $matches[2];
         } else {
-            throw new DiagnosticException(sprintf(
-                "Invalid syntax for tag '@route' in %s%s: expected format is '@route METHOD PATH', got '%s'",
-                $tagData['file'] ?? 'unknown',
-                isset($tagData['line']) ? " on line " . $tagData['line'] : "",
-                $value
-            ));
+            throw new DiagnosticException(
+                sprintf("Invalid syntax for tag '@route': expected format is '@route METHOD PATH', got '%s'", $value),
+                0,
+                null,
+                $tagData['file'] ?? null,
+                $tagData['line'] ?? null
+            );
         }
     }
 }

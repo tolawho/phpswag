@@ -6,6 +6,7 @@ use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\Trait_;
 use PhpParser\Node\Stmt\Enum_;
+use PhpParser\Node\Stmt\Interface_;
 use PhpParser\Node\Stmt\TraitUse;
 use PhpParser\Node\Stmt\Property;
 use PhpParser\Node\Stmt\ClassMethod;
@@ -31,7 +32,7 @@ class Core
     /** @var array<string, TagParser\SchemaTagParserInterface> */
     private array $schemaTagParsers = [];
 
-    /** @var array<string, array{node: Class_|Trait_|Enum_, nameResolver: NameResolver, filePath: string}> */
+    /** @var array<string, array{node: Class_|Trait_|Enum_|Interface_, nameResolver: NameResolver, filePath: string}> */
     private array $discoveredClasses = [];
 
     private bool $isAnalyzed = false;
@@ -402,7 +403,12 @@ class Core
 
     private function discoverStatement(Node $stmt, NameResolver $nameResolver): void
     {
-        if ($stmt instanceof Class_ || $stmt instanceof Trait_ || $stmt instanceof Enum_) {
+        if (
+            $stmt instanceof Class_
+            || $stmt instanceof Trait_
+            || $stmt instanceof Enum_
+            || $stmt instanceof Interface_
+        ) {
             $fqcn = $nameResolver->resolve($stmt->name->toString());
             $this->discoveredClasses[$fqcn] = [
                 'node' => $stmt,
@@ -457,7 +463,7 @@ class Core
         }
     }
 
-    private function analyzeClass(string $fqcn, Class_|Trait_|Enum_ $stmt, NameResolver $nameResolver): void
+    private function analyzeClass(string $fqcn, Class_|Trait_|Enum_|Interface_ $stmt, NameResolver $nameResolver): void
     {
         $schema = $this->schemaRegistry->get($fqcn);
         if (function_exists('enum_exists') && enum_exists($fqcn)) {

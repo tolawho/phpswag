@@ -10,13 +10,26 @@ use Symfony\Component\Console\Tester\CommandTester;
 class GenerateCommandTest extends TestCase
 {
     private CommandTester $commandTester;
+    private bool $hasBackup = false;
 
     protected function setUp(): void
     {
+        if (file_exists('phpswag.yaml')) {
+            rename('phpswag.yaml', 'phpswag.yaml.bak');
+            $this->hasBackup = true;
+        }
+
         $application = new Application();
         $application->add(new GenerateCommand());
         $command = $application->find('generate');
         $this->commandTester = new CommandTester($command);
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->hasBackup && file_exists('phpswag.yaml.bak')) {
+            rename('phpswag.yaml.bak', 'phpswag.yaml');
+        }
     }
 
     public function testExecuteWithoutPathFails()
@@ -71,6 +84,33 @@ class GenerateCommandTest extends TestCase
 
         if (file_exists('test-swagger-flag.yaml')) {
             unlink('test-swagger-flag.yaml');
+        }
+    }
+
+    public function testGenerateCommandLoadsFromYamlConfig()
+    {
+        $configFile = 'phpswag.yaml';
+        $config = [
+            'paths' => ['examples/App'],
+            'openapi_version' => '3.0.0',
+            'format' => 'yaml',
+            'output' => 'test-swagger-config.yaml',
+            'filter_unused' => true,
+        ];
+        file_put_contents($configFile, \Symfony\Component\Yaml\Yaml::dump($config));
+
+        try {
+            $this->commandTester->execute([]);
+            $this->assertEquals(0, $this->commandTester->getStatusCode());
+            $this->assertStringContainsString('Documentation generated to test-swagger-config.yaml', $this->commandTester->getDisplay());
+            $this->assertFileExists('test-swagger-config.yaml');
+        } finally {
+            if (file_exists($configFile)) {
+                unlink($configFile);
+            }
+            if (file_exists('test-swagger-config.yaml')) {
+                unlink('test-swagger-config.yaml');
+            }
         }
     }
 }
