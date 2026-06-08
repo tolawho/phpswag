@@ -105,13 +105,17 @@ class GlobalMetadataDiscoverer
                                 'name' => $matches[3]
                             ];
                         } else {
-                            throw new DiagnosticException(sprintf(
-                                "Invalid syntax for tag '@securityDefinitions.apikey' in %s%s: "
-                                . "expected format is '@securityDefinitions.apikey NAME IN KEY', got '%s'",
+                            throw new DiagnosticException(
+                                sprintf(
+                                    "Invalid syntax for tag '@securityDefinitions.apikey': "
+                                    . "expected format is '@securityDefinitions.apikey NAME IN KEY', got '%s'",
+                                    $tag['value']
+                                ),
+                                0,
+                                null,
                                 $tag['file'] ?? $filePath,
-                                isset($tag['line']) ? " on line " . $tag['line'] : "",
-                                $tag['value']
-                            ));
+                                $tag['line'] ?? null
+                            );
                         }
                     } elseif ($tagName === '@securityDefinitions.jwt') {
                         if (trim($tag['value']) !== '') {
@@ -121,12 +125,14 @@ class GlobalMetadataDiscoverer
                                 'bearerFormat' => 'JWT'
                             ];
                         } else {
-                            throw new DiagnosticException(sprintf(
-                                "Invalid syntax for tag '@securityDefinitions.jwt' in %s%s: "
+                            throw new DiagnosticException(
+                                "Invalid syntax for tag '@securityDefinitions.jwt': "
                                 . "expected format is '@securityDefinitions.jwt NAME', got empty value",
+                                0,
+                                null,
                                 $tag['file'] ?? $filePath,
-                                isset($tag['line']) ? " on line " . $tag['line'] : ""
-                            ));
+                                $tag['line'] ?? null
+                            );
                         }
                     } elseif ($tagName === '@securityDefinitions.basic') {
                         if (trim($tag['value']) !== '') {
@@ -135,12 +141,14 @@ class GlobalMetadataDiscoverer
                                 'scheme' => 'basic'
                             ];
                         } else {
-                            throw new DiagnosticException(sprintf(
-                                "Invalid syntax for tag '@securityDefinitions.basic' in %s%s: "
+                            throw new DiagnosticException(
+                                "Invalid syntax for tag '@securityDefinitions.basic': "
                                 . "expected format is '@securityDefinitions.basic NAME', got empty value",
+                                0,
+                                null,
                                 $tag['file'] ?? $filePath,
-                                isset($tag['line']) ? " on line " . $tag['line'] : ""
-                            ));
+                                $tag['line'] ?? null
+                            );
                         }
                     } elseif ($tagName === '@security') {
                         $globalSecurity = array_merge(
@@ -159,13 +167,17 @@ class GlobalMetadataDiscoverer
                             }
                             $globalTags[$name] = $tagData;
                         } else {
-                            throw new DiagnosticException(sprintf(
-                                "Invalid syntax for tag '@tag.name' in %s%s: "
-                                . "expected format is '@tag.name NAME [description]', got '%s'",
+                            throw new DiagnosticException(
+                                sprintf(
+                                    "Invalid syntax for tag '@tag.name': "
+                                    . "expected format is '@tag.name NAME [description]', got '%s'",
+                                    $tag['value']
+                                ),
+                                0,
+                                null,
                                 $tag['file'] ?? $filePath,
-                                isset($tag['line']) ? " on line " . $tag['line'] : "",
-                                $tag['value']
-                            ));
+                                $tag['line'] ?? null
+                            );
                         }
                     }
                 }

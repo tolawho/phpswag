@@ -5,7 +5,11 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 use Symfony\Component\Console\Application;
 use PhpSwag\CLI\GenerateCommand;
+use PhpSwag\CLI\InitCommand;
+use PhpSwag\CLI\WatchCommand;
 
 $application = new Application('PHP Swagger Generator', '1.0.0');
 $application->add(new GenerateCommand());
+$application->add(new InitCommand());
+$application->add(new WatchCommand());
 $application->run();

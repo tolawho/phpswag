@@ -50,14 +50,18 @@ class ResponseTagParser implements TagParserInterface
             );
             $context->responseDescriptions[$code] = $respDesc;
         } else {
-            throw new DiagnosticException(sprintf(
-                "Invalid syntax for tag '%s' in %s%s: expected format is '%s CODE TYPE [description]', got '%s'",
-                $tagName,
-                $tagData['file'] ?? 'unknown',
-                isset($tagData['line']) ? " on line " . $tagData['line'] : "",
-                $tagName,
-                $value
-            ));
+            throw new DiagnosticException(
+                sprintf(
+                    "Invalid syntax for tag '%s': expected format is '%s CODE TYPE [description]', got '%s'",
+                    $tagName,
+                    $tagName,
+                    $value
+                ),
+                0,
+                null,
+                $tagData['file'] ?? null,
+                $tagData['line'] ?? null
+            );
         }
     }
 }

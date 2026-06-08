@@ -37,7 +37,7 @@ class DocBlockCollector
                 $tagName = $matches[1];
                 $value = isset($matches[2]) ? trim($matches[2]) : '';
 
-                if (in_array($tagName, ['@property', '@var', '@return', '@path', '@query', '@header', '@cookie'])) {
+                if (in_array($tagName, ['@property', '@var', '@path', '@query', '@header', '@cookie'])) {
                     try {
                         // For @path, @query, etc., we treat them similarly to @param for parsing convenience
                         $parseTagName = in_array($tagName, ['@path', '@query', '@header', '@cookie'])
@@ -87,15 +87,13 @@ class DocBlockCollector
                         }
                     } catch (\Exception $e) {
                           throw new \PhpSwag\Exception\DiagnosticException(sprintf(
-                              "Invalid syntax for tag '%s' in %s%s: expected format is '%s TYPE %s\$name%s', got '%s'",
+                              "Invalid syntax for tag '%s': expected format is '%s TYPE %s\$name%s', got '%s'",
                               $tagName,
-                              $filePath ?? 'unknown',
-                              $currentLineNum !== null ? " on line $currentLineNum" : "",
                               $tagName,
                               $tagName === '@var' ? '[' : '',
                               $tagName === '@var' ? ']' : '',
                               $value
-                          ), 0, $e);
+                          ), 0, $e, $filePath, $currentLineNum);
                     }
                 } elseif ($tagName === '@body') {
                     // @body [Type] [Description]
@@ -118,12 +116,10 @@ class DocBlockCollector
                         ];
                     } else {
                         throw new \PhpSwag\Exception\DiagnosticException(sprintf(
-                            "Invalid syntax for tag '@body' in %s%s: "
+                            "Invalid syntax for tag '@body': "
                             . "expected format is '@body TYPE [description]', got '%s'",
-                            $filePath ?? 'unknown',
-                            $currentLineNum !== null ? " on line $currentLineNum" : "",
                             $value
-                        ));
+                        ), 0, null, $filePath, $currentLineNum);
                     }
                 } else {
                     $tags[] = [

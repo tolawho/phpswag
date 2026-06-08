@@ -218,4 +218,34 @@ PHP;
             unlink($tempFile);
         }
     }
+
+    public function testDiagnosticExceptionProperties()
+    {
+        $core = new Core();
+        $code = <<<'PHP'
+<?php
+namespace App\Controllers;
+
+class TestController {
+    /**
+     * @route GET /test
+     * @response 200 \App\Models\NonExistentModel
+     */
+    public function getTest() {}
+}
+PHP;
+
+        $tempFile = tempnam(sys_get_temp_dir(), 'php-swag-properties-test');
+        file_put_contents($tempFile, $code);
+
+        try {
+            $core->generateYaml([$tempFile]);
+            $this->fail("Expected DiagnosticException was not thrown.");
+        } catch (DiagnosticException $e) {
+            $this->assertEquals($tempFile, $e->getFilePath());
+            $this->assertEquals(7, $e->getLineNumber());
+        } finally {
+            unlink($tempFile);
+        }
+    }
 }

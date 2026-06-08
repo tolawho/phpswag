@@ -382,7 +382,28 @@ php examples/generate.php
 ```
 
 ### CLI Usage
-You can use the CLI to generate documentation without writing any PHP code:
+
+You can use the CLI to generate documentation without writing any PHP code.
+
+#### 1. Configuration Initialization (Wizard)
+
+To easily set up a configuration file for your project, run:
+
+```bash
+./vendor/bin/phpswag init
+```
+
+This starts an interactive wizard that asks for your project options and generates a `phpswag.yaml` file in your root folder.
+
+#### 2. Generating Documentation
+
+If you have a `phpswag.yaml` file in your root directory, you can simply run:
+
+```bash
+./vendor/bin/phpswag generate
+```
+
+Or, specify options on the command line (which will override values in the configuration file):
 
 ```bash
 ./vendor/bin/phpswag generate --path src/Controllers --path src/Models --output swagger.yaml
@@ -398,5 +419,36 @@ You can use the CLI to generate documentation without writing any PHP code:
 - `--api-version`: API Version override.
 - `--description`: API Description override.
 - `--host`: API Host/Server URL override.
-- `--cache`: Enable performance caching.
-- `--cache-file`: Custom cache file path (default: `./.phpswag-cache`).
+- `--cache`: Enable caching to speed up generation.
+- `--cache-file`: Cache file path. Default: `./.phpswag-cache`.
+
+#### 3. Live Preview & Hot Reload (Watch Mode)
+
+You can launch a built-in preview server that hosts Swagger UI and hot-reloads instantly when you modify your PHP code:
+
+```bash
+./vendor/bin/phpswag watch
+```
+
+**Options:**
+- `--path`, `-p`: Path(s) to scan.
+- `--output`, `-o`: Output destination file path (default: `swagger.yaml`).
+- `--format`, `-f`: Output format (`yaml` or `json`).
+- `--host`: Server host (default: `localhost`).
+- `--port`: Server port (default: `8080`).
+
+#### 4. Configuration File (`phpswag.yaml`)
+
+An example `phpswag.yaml` file:
+
+```yaml
+paths:
+  - src/Controllers
+  - src/Models
+openapi_version: 3.1.0
+format: yaml
+output: public/swagger.yaml
+filter_unused: true
+cache: true
+cache_file: ./.phpswag-cache
+```
