@@ -93,6 +93,19 @@ class InitCommand extends Command
         );
         $cache = $helper->ask($input, $output, $cacheQuestion);
 
+        // 7. Watch settings (Host & Port)
+        $watchHostQuestion = new Question(
+            '<question>Enter host for live preview server</question> [localhost]: ',
+            'localhost'
+        );
+        $watchHost = $helper->ask($input, $output, $watchHostQuestion);
+
+        $watchPortQuestion = new Question(
+            '<question>Enter port for live preview server</question> [8080]: ',
+            '8080'
+        );
+        $watchPort = $helper->ask($input, $output, $watchPortQuestion);
+
         $config = [
             'paths' => $paths,
             'openapi_version' => $openapiVersion,
@@ -100,6 +113,8 @@ class InitCommand extends Command
             'output' => $outputPath,
             'filter_unused' => $filterUnused,
             'cache' => $cache,
+            'watch_host' => $watchHost,
+            'watch_port' => (int)$watchPort,
         ];
 
         if ($cache) {

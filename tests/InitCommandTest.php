@@ -51,6 +51,8 @@ class InitCommandTest extends TestCase
             'public/docs.yaml', // Output path
             'y', // Filter unused
             'y', // Enable cache
+            '127.0.0.1', // Watch host
+            '9000', // Watch port
         ]);
 
         $commandTester->execute([]);
@@ -67,5 +69,7 @@ class InitCommandTest extends TestCase
         $this->assertTrue($config['filter_unused']);
         $this->assertTrue($config['cache']);
         $this->assertEquals('./.phpswag-cache', $config['cache_file']);
+        $this->assertEquals('127.0.0.1', $config['watch_host']);
+        $this->assertEquals(9000, $config['watch_port']);
     }
 }

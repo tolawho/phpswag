@@ -422,7 +422,22 @@ Or, specify options on the command line (which will override values in the confi
 - `--cache`: Enable caching to speed up generation.
 - `--cache-file`: Cache file path. Default: `./.phpswag-cache`.
 
-#### 3. Configuration File (`phpswag.yaml`)
+#### 3. Live Preview & Hot Reload (Watch Mode)
+
+You can launch a built-in preview server that hosts Swagger UI and hot-reloads instantly when you modify your PHP code:
+
+```bash
+./vendor/bin/phpswag watch
+```
+
+**Options:**
+- `--path`, `-p`: Path(s) to scan.
+- `--output`, `-o`: Output destination file path (default: `swagger.yaml`).
+- `--format`, `-f`: Output format (`yaml` or `json`).
+- `--host`: Server host (default: `localhost`).
+- `--port`: Server port (default: `8080`).
+
+#### 4. Configuration File (`phpswag.yaml`)
 
 An example `phpswag.yaml` file:
 
