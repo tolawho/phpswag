@@ -42,6 +42,6 @@
             "phpstan analyse --memory-limit=512M"
         ],
         "format": "phpcbf",
-        "test": "phpunit"
+        "test": "php -r \"require 'vendor/autoload.php'; passthru(str_starts_with(PHPUnit\\Runner\\Version::id(), '9.') ? 'vendor/bin/phpunit -c phpunit9.xml' : 'vendor/bin/phpunit', $err); exit($err);\""
     }
 }
