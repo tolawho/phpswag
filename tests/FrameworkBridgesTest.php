@@ -70,7 +70,9 @@ class FrameworkBridgesTest extends TestCase
             ['phpswag.version', true],
             ['phpswag.description', true],
             ['phpswag.host', true],
-            ['phpswag.servers', false]
+            ['phpswag.servers', false],
+            ['phpswag.contact', false],
+            ['phpswag.license', false]
         ]);
         $bag->method('get')->willReturnMap([
             ['phpswag.paths', ['examples/App']],
@@ -107,7 +109,9 @@ class FrameworkBridgesTest extends TestCase
             ['phpswag.version', true],
             ['phpswag.description', true],
             ['phpswag.host', true],
-            ['phpswag.servers', false]
+            ['phpswag.servers', false],
+            ['phpswag.contact', false],
+            ['phpswag.license', false]
         ]);
         $bag->method('get')->willReturnMap([
             ['phpswag.paths', ['examples/App']],

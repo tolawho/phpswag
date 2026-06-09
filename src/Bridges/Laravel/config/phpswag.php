@@ -43,6 +43,15 @@ return [
         //     'description' => 'Local Environment'
         // ]
     ],
+    'contact' => [
+        // 'name' => 'Support Team',
+        // 'email' => 'support@example.com',
+        // 'url' => 'https://example.com/support',
+    ],
+    'license' => [
+        // 'name' => 'MIT',
+        // 'url' => 'https://opensource.org/licenses/MIT',
+    ],
 
     /*
     |--------------------------------------------------------------------------

@@ -374,26 +374,32 @@ class Core
             $this->generator->setDescription($description);
         }
 
-        $contact = [];
-        if (isset($this->globalMetadata['@contact.name'])) {
-            $contact['name'] = $this->globalMetadata['@contact.name'];
-        }
-        if (isset($this->globalMetadata['@contact.email'])) {
-            $contact['email'] = $this->globalMetadata['@contact.email'];
-        }
-        if (isset($this->globalMetadata['@contact.url'])) {
-            $contact['url'] = $this->globalMetadata['@contact.url'];
+        $contact = $this->cliOverrides['contact'] ?? null;
+        if ($contact === null) {
+            $contact = [];
+            if (isset($this->globalMetadata['@contact.name'])) {
+                $contact['name'] = $this->globalMetadata['@contact.name'];
+            }
+            if (isset($this->globalMetadata['@contact.email'])) {
+                $contact['email'] = $this->globalMetadata['@contact.email'];
+            }
+            if (isset($this->globalMetadata['@contact.url'])) {
+                $contact['url'] = $this->globalMetadata['@contact.url'];
+            }
         }
         if (!empty($contact)) {
             $this->generator->setContact($contact);
         }
 
-        $license = [];
-        if (isset($this->globalMetadata['@license.name'])) {
-            $license['name'] = $this->globalMetadata['@license.name'];
-        }
-        if (isset($this->globalMetadata['@license.url'])) {
-            $license['url'] = $this->globalMetadata['@license.url'];
+        $license = $this->cliOverrides['license'] ?? null;
+        if ($license === null) {
+            $license = [];
+            if (isset($this->globalMetadata['@license.name'])) {
+                $license['name'] = $this->globalMetadata['@license.name'];
+            }
+            if (isset($this->globalMetadata['@license.url'])) {
+                $license['url'] = $this->globalMetadata['@license.url'];
+            }
         }
         if (!empty($license)) {
             $this->generator->setLicense($license);
@@ -990,7 +996,7 @@ class Core
      */
     public function setContact(?array $contact): void
     {
-        $this->generator->setContact($contact);
+        $this->cliOverrides['contact'] = $contact;
     }
 
     /**
@@ -998,7 +1004,7 @@ class Core
      */
     public function setLicense(?array $license): void
     {
-        $this->generator->setLicense($license);
+        $this->cliOverrides['license'] = $license;
     }
 
     /**
