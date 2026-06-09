@@ -22,7 +22,7 @@ namespace App\Controllers;
 class TestController {
     /**
      * @route GET /test-string
-     * @response 200 \PhpSwag\Tests\Fixtures\Enums\BackedStringEnum
+     * @response 200 \PhpSwag\Tests\fixtures\enums\BackedStringEnum
      */
     public function getTest() {}
 }
@@ -39,7 +39,7 @@ PHP;
         unlink($tempFile);
 
         $spec = Yaml::parse($yaml);
-        $schema = $spec['components']['schemas']['PhpSwag_Tests_Fixtures_Enums_BackedStringEnum'];
+        $schema = $spec['components']['schemas']['PhpSwag_Tests_fixtures_enums_BackedStringEnum'];
 
         $this->assertEquals('string', $schema['type']);
         $this->assertEquals(['H', 'S'], $schema['enum']);
@@ -59,7 +59,7 @@ namespace App\Controllers;
 class TestController {
     /**
      * @route GET /test-int
-     * @response 200 \PhpSwag\Tests\Fixtures\Enums\BackedIntEnum
+     * @response 200 \PhpSwag\Tests\fixtures\enums\BackedIntEnum
      */
     public function getTest() {}
 }
@@ -75,7 +75,7 @@ PHP;
         unlink($tempFile);
 
         $spec = Yaml::parse($yaml);
-        $schema = $spec['components']['schemas']['PhpSwag_Tests_Fixtures_Enums_BackedIntEnum'];
+        $schema = $spec['components']['schemas']['PhpSwag_Tests_fixtures_enums_BackedIntEnum'];
 
         $this->assertEquals('integer', $schema['type']);
         $this->assertEquals([1, 0], $schema['enum']);
@@ -95,7 +95,7 @@ namespace App\Controllers;
 class TestController {
     /**
      * @route GET /test-unit
-     * @response 200 \PhpSwag\Tests\Fixtures\Enums\PureUnitEnum
+     * @response 200 \PhpSwag\Tests\fixtures\enums\PureUnitEnum
      */
     public function getTest() {}
 }
@@ -111,7 +111,7 @@ PHP;
         unlink($tempFile);
 
         $spec = Yaml::parse($yaml);
-        $schema = $spec['components']['schemas']['PhpSwag_Tests_Fixtures_Enums_PureUnitEnum'];
+        $schema = $spec['components']['schemas']['PhpSwag_Tests_fixtures_enums_PureUnitEnum'];
 
         $this->assertEquals('string', $schema['type']);
         $this->assertEquals(['Pending', 'Approved', 'Rejected'], $schema['enum']);
