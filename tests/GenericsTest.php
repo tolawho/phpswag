@@ -76,4 +76,35 @@ class GenericsTest extends TestCase
         $this->assertStringContainsString("message:", $yaml);
         $this->assertStringContainsString("App_User", $yaml);
     }
+
+    public function testGenericsWithConstraints()
+    {
+        $dir = __DIR__ . '/fixtures/generics_constraints';
+        @mkdir($dir, 0777, true);
+
+        file_put_contents($dir . '/BaseModel.php', '<?php namespace App; class BaseModel { public string $id; }');
+        file_put_contents($dir . '/QueryFilter.php', '<?php namespace App; /** @template TModel of BaseModel */ class QueryFilter { }');
+        file_put_contents($dir . '/SortFilter.php', '<?php namespace App; use App\QueryFilter; use App\BaseModel;
+        /**
+         * @template TModel of BaseModel
+         *
+         * @extends QueryFilter<TModel>
+         */
+        class SortFilter extends QueryFilter { }');
+        file_put_contents($dir . '/Controller.php', '<?php namespace App;
+        use App\SortFilter;
+        use App\BaseModel;
+        class Controller {
+            /**
+             * @route GET /sort
+             * @response 200 SortFilter<BaseModel>
+             */
+            public function getSort() {}
+        }');
+
+        $core = new Core();
+        $yaml = $core->generate([$dir]);
+
+        $this->assertStringContainsString("App_SortFilter:", $yaml);
+    }
 }

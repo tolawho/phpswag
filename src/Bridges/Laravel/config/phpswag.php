@@ -59,4 +59,15 @@ return [
     */
     'swagger_ui' => true,
     'swagger_ui_path' => '/api/docs',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Filter Unused Schemas
+    |--------------------------------------------------------------------------
+    |
+    | When set to true, schemas that are not referenced by any route/path
+    | will be filtered out from the generated specification.
+    |
+    */
+    'filter_unused' => true,
 ];

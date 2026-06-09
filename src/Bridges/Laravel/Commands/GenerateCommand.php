@@ -13,7 +13,9 @@ class GenerateCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'phpswag:generate {--validate : Run validation on the generated spec}';
+    protected $signature = 'phpswag:generate'
+        . ' {--validate : Run validation on the generated spec}'
+        . ' {--filter-unused= : Filter unused schemas (true or false)}';
 
     /**
      * The console command description.
@@ -66,6 +68,15 @@ class GenerateCommand extends Command
                 $cacheFile = $config['cache_file'] ?? storage_path('framework/cache/phpswag-cache');
                 $core->enableCache($cacheFile);
             }
+
+            // Apply filter-unused configuration
+            $filterUnusedOption = $this->option('filter-unused');
+            if ($filterUnusedOption === null || $filterUnusedOption === '') {
+                $filterUnused = (bool)($config['filter_unused'] ?? true);
+            } else {
+                $filterUnused = filter_var($filterUnusedOption, FILTER_VALIDATE_BOOLEAN);
+            }
+            $core->setFilterUnusedSchemas($filterUnused);
 
             // Perform validation if flag is set
             if ($this->option('validate')) {
