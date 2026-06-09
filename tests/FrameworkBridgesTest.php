@@ -14,6 +14,10 @@ use Symfony\Component\Console\Tester\CommandTester;
 
 class FrameworkBridgesTest extends TestCase
 {
+    public static function setUpBeforeClass(): void
+    {
+        require_once __DIR__ . '/laravel-helpers.php';
+    }
     public function testSymfonyConfigurationTree()
     {
         $configuration = new Configuration();
@@ -139,5 +143,60 @@ class FrameworkBridgesTest extends TestCase
         $provider = new \PhpSwag\Bridges\Laravel\PhpSwagServiceProvider($app);
 
         $this->assertInstanceOf(\Illuminate\Support\ServiceProvider::class, $provider);
+    }
+
+    public function testLaravelGenerateCommand()
+    {
+        global $laravelConfig;
+        $laravelConfig = [
+            'phpswag' => [
+                'paths' => ['examples/App'],
+                'output' => 'test-laravel-spec.yaml',
+                'format' => 'yaml',
+                'title' => 'Laravel Spec',
+                'version' => '2.0.0',
+                'description' => 'Generated in Laravel tests',
+                'host' => 'http://localhost:8000',
+                'cache' => false,
+                'filter_unused' => true,
+            ]
+        ];
+
+        $command = new \PhpSwag\Bridges\Laravel\Commands\GenerateCommand();
+        $laravelApp = $this->createMock(\Illuminate\Contracts\Foundation\Application::class);
+        $laravelApp->method('runningUnitTests')->willReturn(true);
+        $laravelApp->method('make')->willReturnCallback(function ($abstract, $parameters = []) {
+            if ($abstract === \Illuminate\Console\OutputStyle::class) {
+                return new \Illuminate\Console\OutputStyle($parameters['input'], $parameters['output']);
+            }
+            return null;
+        });
+        $laravelApp->method('call')->willReturnCallback(function ($callback, $parameters = []) {
+            if (is_array($callback) && $callback[0] instanceof \PhpSwag\Bridges\Laravel\Commands\GenerateCommand) {
+                return $callback[0]->handle();
+            }
+            return is_callable($callback) ? $callback(...$parameters) : null;
+        });
+        $command->setLaravel($laravelApp);
+
+        $application = new SymfonyApplication();
+        $application->add($command);
+
+        $tester = new CommandTester($application->find('phpswag:generate'));
+
+        $tester->execute([]);
+        $this->assertEquals(0, $tester->getStatusCode());
+        $this->assertStringContainsString('Documentation generated successfully to test-laravel-spec.yaml', $tester->getDisplay());
+
+        if (file_exists('test-laravel-spec.yaml')) {
+            unlink('test-laravel-spec.yaml');
+        }
+
+        // Test option override
+        $tester->execute(['--filter-unused' => 'false']);
+        $this->assertEquals(0, $tester->getStatusCode());
+        if (file_exists('test-laravel-spec.yaml')) {
+            unlink('test-laravel-spec.yaml');
+        }
     }
 }

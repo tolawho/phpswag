@@ -108,4 +108,3 @@ class GenericsTest extends TestCase
         $this->assertStringContainsString("App_SortFilter:", $yaml);
     }
 }
-
