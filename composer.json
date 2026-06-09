@@ -35,6 +35,13 @@
     "config": {
         "sort-packages": true
     },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "PhpSwag\\Bridges\\Laravel\\PhpSwagServiceProvider"
+            ]
+        }
+    },
     "bin": ["bin/phpswag"],
     "scripts": {
         "lint": [
