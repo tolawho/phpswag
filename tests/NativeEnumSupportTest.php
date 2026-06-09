@@ -6,6 +6,9 @@ use PHPUnit\Framework\TestCase;
 use PhpSwag\Core;
 use Symfony\Component\Yaml\Yaml;
 
+/**
+ * @requires PHP 8.1
+ */
 class NativeEnumSupportTest extends TestCase
 {
     public function testBackedStringEnumSupport()
