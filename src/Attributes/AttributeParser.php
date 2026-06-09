@@ -133,6 +133,7 @@ class AttributeParser
         if ($expr instanceof Array_) {
             $result = [];
             foreach ($expr->items as $item) {
+                // @phpstan-ignore-next-line
                 if ($item === null) {
                     continue;
                 }

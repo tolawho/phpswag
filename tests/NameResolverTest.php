@@ -18,7 +18,12 @@ class NameResolverTest extends TestCase
         class UserController {}
         ';
 
-        $parser = (new ParserFactory())->create(ParserFactory::PREFER_PHP7);
+        $factory = new ParserFactory();
+        if (method_exists($factory, 'createForNewestSupportedVersion')) {
+            $parser = $factory->createForNewestSupportedVersion();
+        } else {
+            $parser = $factory->create(ParserFactory::PREFER_PHP7);
+        }
         $stmts = $parser->parse($code);
 
         $resolver = new NameResolver();
