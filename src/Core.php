@@ -487,6 +487,7 @@ class Core
             $enumValues = [];
 
             if ($isBacked) {
+                /** @var \ReflectionNamedType $backingType */
                 $backingType = $reflection->getBackingType();
                 $backingTypeName = $backingType->getName();
                 $enumType = $backingTypeName === 'int' ? 'integer' : 'string';
