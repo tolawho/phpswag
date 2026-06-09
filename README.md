@@ -633,3 +633,30 @@ To validate the schema:
 ```bash
 php bin/console phpswag:generate --validate
 ```
+
+---
+
+## Contributing
+
+We welcome contributions from the community! If you'd like to help improve `phpswag`, please review our [Contributing Guidelines](CONTRIBUTING.md). 
+
+Please also adhere to our [Code of Conduct](CODE_OF_CONDUCT.md) to keep our community approachable and respectable.
+
+For security vulnerabilities, please refer to our [Security Policy](SECURITY.md).
+
+---
+
+## ☕ Support / Donate
+
+**⭐️ Star this repository**
+
+If you find `phpswag` useful, please consider giving it a star on GitHub! It helps the project grow and reach more developers.
+
+**☕ Buy me a coffee**
+
+This project is developed and maintained entirely for free during my spare time. If you would like to financially support its development, you can buy me a coffee through the following channels:
+
+* **PayPal:** [paypal.me/tolawho](https://paypal.me/tolawho)
+* **Ko-fi:** [ko-fi.com/tolawho](https://ko-fi.com/tolawho)
+* **Crypto (ETH/ERC20):** `0x730c98ef98c660862baedef292ae3a041a905cdd`
+* **Crypto (BTC):** `bc1qv2cp6mcjcd3m2v6hvk09qjg47tljd6mkea6dmuevhxm3a6ps38jqxtwgex`
