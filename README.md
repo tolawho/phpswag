@@ -1,5 +1,11 @@
 # PHP Swagger Generator
 
+[![CI Build Status](https://github.com/tolawho/phpswag/actions/workflows/ci.yml/badge.svg)](https://github.com/tolawho/phpswag/actions)
+[![Codecov Coverage](https://codecov.io/gh/tolawho/phpswag/branch/main/graph/badge.svg)](https://codecov.io/gh/tolawho/phpswag)
+[![PHP Version](https://img.shields.io/badge/php-%3E%3D%208.0-blue.svg)](https://packagist.org/packages/phpswag/phpswag)
+[![PHPStan Level 7](https://img.shields.io/badge/PHPStan-level%207-brightgreen.svg)](https://github.com/phpstan/phpstan)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A framework-agnostic PHP Swagger/OpenAPI generator that uses static analysis (AST) and PHPDoc. This library scans your source code and generates OpenAPI 3.0 or 3.1 specifications automatically.
 
 ## Features
@@ -428,7 +434,7 @@ When both PHPDoc and PHP 8 Attributes are present:
     - `@template [NAME]` (for generics)
     - `@extends [TYPE]` or `@use [TYPE]` (for generic arguments)
 
-## Testing
+## Testing & Code Quality
 
 To run the unit tests:
 ```bash
@@ -436,10 +442,17 @@ composer install
 ./vendor/bin/phpunit
 ```
 
+To run the linters (coding standard check and static analysis):
+```bash
+composer lint
+```
+
 To run the example generator:
 ```bash
 php examples/generate.php
 ```
+
+Detailed documentation on CI/CD configuration, quality statistics, code coverage targets, and open-source metrics is available in the [OPEN_SOURCE_METRICS.md](OPEN_SOURCE_METRICS.md) file.
 
 ### CLI Usage
 

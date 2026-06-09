@@ -3,3 +3,5 @@ vendor/
 .phpswag-cache
 composer.lock
 swagger.yaml
+coverage.xml
+coverage-report/
