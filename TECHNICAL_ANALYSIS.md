@@ -255,3 +255,52 @@ class SchemaRegistry {
 - `array<User>` hoặc `User[]` -> `type: array, items: { $ref: '#/components/schemas/User' }`
 - `string|null` -> `type: string, nullable: true` (OpenAPI 3.0) hoặc `type: [string, null]` (OpenAPI 3.1)
 - `User|Admin` -> `oneOf: [ { $ref: 'User' }, { $ref: 'Admin' } ]`
+
+---
+
+## 10. Thiết kế kiến trúc các Tính năng Mới (Epic 6, 7, 8)
+
+### 10.1. PHP 8+ Attributes Support (Epic 6)
+
+#### a. Cấu trúc Attribute Classes
+Hỗ trợ song song cả lớp cốt lõi và các lớp phím tắt:
+- `#[Route(string $method, string $path)]`
+- Lớp phím tắt: `#[Get(string $path)]`, `#[Post(string $path)]`, `#[Put(string $path)]`, `#[Delete(string $path)]`
+- Định nghĩa tham số: `#[QueryParam(string $name, ?string $type = null, ?string $description = null, ...$validationConstraints)]` (Tương tự cho PathParam, HeaderParam, CookieParam).
+- Định nghĩa Body & Response: `#[RequestBody(string $type, ?string $description = null)]`, `#[Response(int $code, string $type, ?string $description = null)]`.
+- Ràng buộc Validation được truyền dưới dạng **named arguments** trực tiếp vào constructor của Attribute để tận dụng tối đa IDE autocomplete.
+
+#### b. Ánh xạ Attribute từ các thư viện ngoài (External Mapping)
+Để tránh lập trình viên phải khai báo trùng lặp Attribute khi dùng framework, `phpswag` sẽ hỗ trợ phân tích và ánh xạ trực tiếp các Attribute Route của Symfony (`Symfony\Component\Routing\Annotation\Route`) sang cấu trúc OpenAPI tương ứng của mình.
+
+#### c. Chiến lược Gộp và Ưu tiên (Smart Merge Strategy)
+Khi khai báo cả PHPDoc và Attributes:
+- **Thuộc tính đơn** (summary, description, operationId, deprecated): Attributes ghi đè hoàn toàn PHPDoc.
+- **Mảng/Danh sách** (tag, security): Gộp chung cả hai nguồn.
+- **Keyed Collection** (query params trùng tên, code response trùng): Attribute ghi đè PHPDoc tại khóa (key) bị trùng lặp.
+
+### 10.2. Framework Bridges (Epic 7) [ĐÃ TRIỂN KHAI]
+
+#### a. Laravel Bridge (`src/Bridges/Laravel`)
+- Cung cấp `PhpSwagServiceProvider` tự động đăng ký:
+  - Cấu hình từ file `config/phpswag.php` (cho phép tùy biến paths, output, format, cache, server UI path).
+  - Artisan commands: `php artisan phpswag:generate` (hỗ trợ cờ `--validate`).
+  - Route phục vụ Swagger UI (mặc định `/api/docs`).
+- **Cơ chế render UI:**
+  - Route được đăng ký tự động trả về một trang Swagger UI HTML sử dụng thư viện CDN giúp giao diện hiển thị nhanh, đẹp và đồng nhất.
+
+#### b. Symfony Bridge (`src/Bridges/Symfony`)
+- Cung cấp `PhpSwagBundle` tự động đăng ký Dependency Injection.
+- Cung cấp Console Command `bin/console phpswag:generate` (hỗ trợ cờ `--validate`).
+
+### 10.3. Linter & OpenAPI Validator (Epic 8) [ĐÃ TRIỂN KHAI]
+
+#### a. Native Structural Validator (Bộ kiểm lỗi nội bộ - `src/Validation/Validator.php`)
+- Tự động chạy kiểm tra tính toàn vẹn của spec:
+  - Kiểm tra xem các Class tham chiếu trong `@response` hay `@body` (thông qua `$ref`) có thực sự tồn tại trong registry/components.schemas hay không.
+  - Kiểm tra các trường thông tin bắt buộc của OpenAPI spec (như `openapi`, `info`, `title`, `version`).
+  - Cảnh báo nếu không định nghĩa endpoint nào trong file spec.
+
+#### b. Xử lý lỗi linh hoạt (Contextual Error Handling)
+- Khi chạy lệnh **`generate`** kèm cờ `--validate`: In chi tiết các lỗi phát hiện và dừng quá trình biên dịch (trả về mã lỗi khác `0`) nếu phát hiện spec không hợp lệ.
+

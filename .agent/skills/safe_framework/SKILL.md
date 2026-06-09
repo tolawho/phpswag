@@ -5,7 +5,7 @@ description: Guide for applying Essential SAFe practices (PI Planning, Iteration
 
 # SAFE Framework Skill
 
-This skill guides you in applying Essential SAFe practices within the `wfxp.api` project.
+This skill guides you in applying Essential SAFe practices within the `phpswag` project.
 
 ## 1. Core Concepts
 -   **ART (Agile Release Train)**: A virtual organization of 5-12 teams (50-125+ people) that plans, commits, and executes together.

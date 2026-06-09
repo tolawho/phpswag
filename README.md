@@ -29,6 +29,9 @@ A framework-agnostic PHP Swagger/OpenAPI generator that uses static analysis (AS
 - **OpenAPI 3.0 & 3.1**: Supports both versions, with automatic conversion of nullable types for 3.1.
 - **Schema Registry**: Handles circular references and avoids duplicate definitions.
 - **Native PHP Enum Support (PHP 8.1+)**: Automatically extracts enum cases and types for both `BackedEnum` (string/int) and `UnitEnum`.
+- **PHP 8+ Attributes Support**: Declare routing, schema, and parameter metadata directly using native PHP 8 attributes (e.g., `#[Get]`, `#[Property]`, `#[QueryParam]`, `#[Response]`).
+- **OpenAPI Linter & Validator**: Detect specification integrity issues and unresolved model references with the `--validate` option.
+- **Framework Integrations**: Seamless bridges for Laravel Service Providers and Symfony Bundle DI configurations.
 
 ## Installation
 
@@ -326,6 +329,63 @@ public function show(int $id, string $status) {}
 - **Metadata**: Support `enum(a,b,c)` and `default(value)` in descriptions.
 - **Auto-inference**: If no tags are provided, parameters are inferred from the method signature. Primitive types match path/query, and class types match the request body.
 
+### PHP 8+ Attributes Support
+
+You can document your endpoints and models using modern PHP 8+ Attributes instead of (or alongside) PHPDoc comments. Attributes offer IDE autocomplete, static checking, and clean syntax.
+
+#### Available Attributes
+
+All attributes are located under the `PhpSwag\Attributes` namespace:
+
+- **Routing & Tags**:
+  - `#[Route(method: string, path: string)]` or method shortcuts: `#[Get(path)]`, `#[Post(path)]`, `#[Put(path)]`, `#[Delete(path)]`.
+  - `#[Tag(name: string, description: ?string = null)]` (Repeatable, can be on class/method).
+  - `#[OperationId(id: string)]` (On method).
+  - `#[Deprecated]` (On method).
+- **Parameters & Body**:
+  - `#[QueryParam]`, `#[PathParam]`, `#[HeaderParam]`, `#[CookieParam]`: Specify custom path, query, header, or cookie parameters.
+  - `#[RequestBody(type: string, description: ?string = null, ...validation)]`: Define endpoint's request body schema.
+- **Response & Schema**:
+  - `#[Response(code: int|string, type: string, description: ?string = null)]` (Repeatable, on method).
+  - `#[Schema(title: ?string = null, description: ?string = null)]` (On class).
+  - `#[Property(name: ?string = null, type: ?string = null, description: ?string = null, ...validation, required: ?bool = null)]` (Repeatable on class, or single on class property).
+
+#### Example Usage
+
+```php
+use PhpSwag\Attributes\Get;
+use PhpSwag\Attributes\Tag;
+use PhpSwag\Attributes\QueryParam;
+use PhpSwag\Attributes\Response;
+use PhpSwag\Attributes\Property;
+use PhpSwag\Attributes\Schema;
+
+#[Schema(description: "User Response Model")]
+class User {
+    #[Property(description: "User unique ID", minimum: 1)]
+    public int $id;
+
+    #[Property(description: "User email", format: "email")]
+    public string $email;
+}
+
+#[Tag("Users")]
+class UserController {
+    #[Get("/users/{id}")]
+    #[QueryParam("status", type: "string", description: "Filter by status", enum: ["active", "inactive"])]
+    #[Response(200, User::class, description: "Success response")]
+    public function show(int $id) {}
+}
+```
+
+#### Smart Merge Strategy (Parallel Usage)
+
+When both PHPDoc and PHP 8 Attributes are present:
+1. **Single-value properties** (e.g., `summary`, `description`, `operationId`): Values in **Attributes** override PHPDoc. PHPDoc is used as a fallback if not declared in Attributes.
+2. **Collections** (e.g., tags, security): Values from both sources are **merged** together.
+3. **Keyed Collections** (e.g., query params with matching names, response codes): Attributes **override** PHPDoc for that specific key/parameter. Unmatched keys from both sources are merged.
+
+
 ## Support Tags
 
 - **Global Metadata**:
@@ -421,6 +481,7 @@ Or, specify options on the command line (which will override values in the confi
 - `--host`: API Host/Server URL override.
 - `--cache`: Enable caching to speed up generation.
 - `--cache-file`: Cache file path. Default: `./.phpswag-cache`.
+- `--validate`: Run validation and linter checks on the generated specification (checks for missing title/version, structural integrity, and unresolved `$ref` schemas).
 
 #### 3. Live Preview & Hot Reload (Watch Mode)
 
@@ -451,4 +512,114 @@ output: public/swagger.yaml
 filter_unused: true
 cache: true
 cache_file: ./.phpswag-cache
+```
+
+---
+
+## PHP 8+ Attributes Support
+
+In addition to PHPDoc annotations, `phpswag` fully supports native PHP 8 Attributes. Attributes can be used side-by-side with PHPDoc annotations and follow a **Smart Merge & Override** strategy:
+- Single-value metadata (e.g. `summary`, `description`, etc.) defined in Attributes will override PHPDoc definitions.
+- Parameter definitions are matched by name; Attributes override PHPDoc definitions for the same parameter name.
+- Collection tags (e.g. `@tag`, `@security`) defined in both places are merged.
+
+### Example
+
+```php
+use PhpSwag\Attributes\Get;
+use PhpSwag\Attributes\Tag;
+use PhpSwag\Attributes\QueryParam;
+use PhpSwag\Attributes\Response;
+use PhpSwag\Attributes\Schema;
+use PhpSwag\Attributes\Property;
+
+#[Tag("Users")]
+class UserController {
+    #[Get("/users/{id}")]
+    #[QueryParam("status", type: "string", description: "Filter by user status", enum: ["active", "inactive"])]
+    #[Response(200, User::class, description: "Returns the requested user")]
+    public function show(int $id) {}
+}
+
+#[Schema(title: "User", description: "User representation")]
+class User {
+    #[Property(description: "Unique identifier")]
+    public int $id; // Native type hint 'int' is automatically inferred as 'integer'!
+
+    #[Property(description: "User email address", format: "email")]
+    public string $email;
+}
+```
+
+---
+
+## Framework Bridges
+
+`phpswag` includes out-of-the-box integrations for Laravel and Symfony.
+
+### Laravel Integration
+
+The Laravel bridge registers config, Artisan commands, and automatic Swagger UI route mappings.
+
+#### 1. Registration
+Add the Service Provider in `config/app.php` (if not auto-discovered):
+```php
+'providers' => [
+    // ...
+    PhpSwag\Bridges\Laravel\PhpSwagServiceProvider::class,
+];
+```
+
+#### 2. Configuration
+Publish the configuration file:
+```bash
+php artisan vendor:publish --tag=phpswag-config
+```
+This generates `config/phpswag.php` where you can customize directories to scan, output path, API metadata, and Swagger UI routes.
+
+#### 3. Generation & Validation
+Run the Artisan command to generate the spec:
+```bash
+php artisan phpswag:generate
+```
+Pass the `--validate` flag to validate schema references and spec completeness:
+```bash
+php artisan phpswag:generate --validate
+```
+
+---
+
+### Symfony Integration
+
+The Symfony bridge provides a Bundle to load parameters into the Dependency Injection container and registers Symfony console commands.
+
+#### 1. Registration
+Register the bundle in `config/bundles.php`:
+```php
+return [
+    // ...
+    PhpSwag\Bridges\Symfony\PhpSwagBundle::class => ['all' => true],
+];
+```
+
+#### 2. Configuration
+Create a configuration file `config/packages/phpswag.yaml`:
+```yaml
+phpswag:
+    paths:
+        - '%kernel.project_dir%/src/Controller'
+        - '%kernel.project_dir%/src/Entity'
+    output: '%kernel.project_dir%/public/swagger.yaml'
+    title: 'My Symfony API'
+    version: '1.0.0'
+```
+
+#### 3. Generation & Validation
+Run the console command:
+```bash
+php bin/console phpswag:generate
+```
+To validate the schema:
+```bash
+php bin/console phpswag:generate --validate
 ```
