@@ -479,6 +479,7 @@ class Core
     private function analyzeClass(string $fqcn, Class_|Trait_|Enum_|Interface_ $stmt, NameResolver $nameResolver): void
     {
         $schema = $this->schemaRegistry->get($fqcn);
+        // @phpstan-ignore-next-line
         if (PHP_VERSION_ID >= 80100 && function_exists('enum_exists') && enum_exists($fqcn)) {
             $reflection = new \ReflectionEnum($fqcn);
             $isBacked = $reflection->isBacked();
