@@ -13,7 +13,14 @@ class Parser
 
     public function __construct()
     {
-        $this->parser = (new ParserFactory())->create(ParserFactory::PREFER_PHP7);
+        $factory = new ParserFactory();
+        // @phpstan-ignore-next-line
+        if (method_exists($factory, 'createForNewestSupportedVersion')) {
+            $this->parser = $factory->createForNewestSupportedVersion();
+        } else {
+            // @phpstan-ignore-next-line
+            $this->parser = $factory->create(ParserFactory::PREFER_PHP7);
+        }
     }
 
     /**
