@@ -25,7 +25,8 @@ class GlobalMetadataDiscoverer
      *     metadataSources: array<string, string>,
      *     securitySchemes: array<string, array<string, mixed>>,
      *     globalSecurity: array<int, array<string, array<int, string>>>,
-     *     globalTags: array<string, array{name: string, description?: string}>
+     *     globalTags: array<string, array{name: string, description?: string}>,
+     *     globalServers: array<int, array<string, mixed>>
      * }
      */
     public function discover(
@@ -39,6 +40,7 @@ class GlobalMetadataDiscoverer
         $securitySchemes = [];
         $globalSecurity = [];
         $globalTags = [];
+        $globalServers = [];
 
         $tokens = token_get_all($code);
         foreach ($tokens as $token) {
@@ -58,7 +60,7 @@ class GlobalMetadataDiscoverer
                 if (!$hasRouteOrProperty) {
                     foreach ($tags as $tag) {
                         if (
-                            in_array($tag['name'], ['@title', '@version', '@description', '@host']) ||
+                            in_array($tag['name'], ['@title', '@version', '@description', '@host', '@server']) ||
                             str_starts_with($tag['name'], '@contact.') ||
                             str_starts_with($tag['name'], '@license.') ||
                             str_starts_with($tag['name'], '@securityDefinitions.') ||
@@ -97,6 +99,29 @@ class GlobalMetadataDiscoverer
                         }
                         $globalMetadata[$tagName] = $val;
                         $metadataSources[$tagName] = $filePath;
+                    } elseif ($tagName === '@server') {
+                        $parts = preg_split('/\s+/', $tag['value'] ?? '', 2);
+                        if (is_array($parts) && isset($parts[0]) && trim($parts[0]) !== '') {
+                            $url = $parts[0];
+                            $desc = isset($parts[1]) ? trim($parts[1]) : null;
+                            $serverData = ['url' => $url];
+                            if ($desc !== null && $desc !== '') {
+                                $serverData['description'] = $desc;
+                            }
+                            $globalServers[] = $serverData;
+                        } else {
+                            throw new DiagnosticException(
+                                sprintf(
+                                    "Invalid syntax for tag '@server': "
+                                    . "expected format is '@server URL [description]', got '%s'",
+                                    $tag['value'] ?? ''
+                                ),
+                                0,
+                                null,
+                                $tag['file'] ?? $filePath,
+                                $tag['line'] ?? null
+                            );
+                        }
                     } elseif ($tagName === '@securityDefinitions.apikey') {
                         if (preg_match('/^(\S+)\s+(header|query|cookie)\s+(\S+)/', $tag['value'], $matches)) {
                             $securitySchemes[$matches[1]] = [
@@ -190,6 +215,7 @@ class GlobalMetadataDiscoverer
             'securitySchemes' => $securitySchemes,
             'globalSecurity' => $globalSecurity,
             'globalTags' => $globalTags,
+            'globalServers' => $globalServers,
         ];
     }
 }

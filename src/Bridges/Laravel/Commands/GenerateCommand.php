@@ -59,7 +59,9 @@ class GenerateCommand extends Command
             if (!empty($config['description'])) {
                 $core->setDescription($config['description']);
             }
-            if (!empty($config['host'])) {
+            if (!empty($config['servers'])) {
+                $core->setServers($config['servers']);
+            } elseif (!empty($config['host'])) {
                 $core->setServers([['url' => $config['host']]]);
             }
 

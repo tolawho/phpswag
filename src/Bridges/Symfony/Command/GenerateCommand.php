@@ -85,7 +85,13 @@ class GenerateCommand extends Command
                 $description = $this->parameterBag->get('phpswag.description');
                 $core->setDescription($description);
             }
-            if ($this->parameterBag->has('phpswag.host')) {
+            if ($this->parameterBag->has('phpswag.servers')) {
+                $servers = $this->parameterBag->get('phpswag.servers');
+                if (is_array($servers) && !empty($servers)) {
+                    /** @var array<int, array<string, mixed>> $servers */
+                    $core->setServers($servers);
+                }
+            } elseif ($this->parameterBag->has('phpswag.host')) {
                 /** @var string $host */
                 $host = $this->parameterBag->get('phpswag.host');
                 $core->setServers([['url' => $host]]);

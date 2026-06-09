@@ -53,6 +53,8 @@ class Core
     private array $globalSecurity = [];
     /** @var array<string, array{name: string, description?: string}> */
     private array $globalTags = [];
+    /** @var array<int, array<string, mixed>> */
+    private array $globalServers = [];
 
     public function __construct(
         ?Scanner $scanner = null,
@@ -336,6 +338,7 @@ class Core
         $this->securitySchemes = array_merge($this->securitySchemes, $discovered['securitySchemes']);
         $this->globalSecurity = array_merge($this->globalSecurity, $discovered['globalSecurity']);
         $this->globalTags = array_merge($this->globalTags, $discovered['globalTags']);
+        $this->globalServers = array_merge($this->globalServers, $discovered['globalServers']);
 
         $nameResolver = new NameResolver();
         $traverser = new NodeTraverser();
@@ -396,9 +399,16 @@ class Core
             $this->generator->setLicense($license);
         }
 
-        $host = $this->cliOverrides['host'] ?? $this->globalMetadata['@host'] ?? null;
-        if ($host) {
-            $this->generator->setServers([['url' => $host]]);
+        $servers = $this->cliOverrides['servers'] ?? null;
+        if ($servers !== null) {
+            $this->generator->setServers($servers);
+        } elseif (!empty($this->globalServers)) {
+            $this->generator->setServers($this->globalServers);
+        } else {
+            $host = $this->cliOverrides['host'] ?? $this->globalMetadata['@host'] ?? null;
+            if ($host) {
+                $this->generator->setServers([['url' => $host]]);
+            }
         }
 
         if (!empty($this->securitySchemes)) {
@@ -996,10 +1006,9 @@ class Core
      */
     public function setServers(array $servers): void
     {
+        $this->cliOverrides['servers'] = $servers;
         if (isset($servers[0]['url'])) {
             $this->cliOverrides['host'] = $servers[0]['url'];
-        } else {
-            $this->generator->setServers($servers);
         }
     }
 
