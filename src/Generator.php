@@ -131,7 +131,10 @@ class Generator
 
     public function generateYaml(): string
     {
-        $yaml = Yaml::dump($this->generateSpec(), 10, 2, Yaml::DUMP_NUMERIC_KEY_AS_STRING);
+        $flags = defined('Symfony\Component\Yaml\Yaml::DUMP_NUMERIC_KEY_AS_STRING')
+            ? \Symfony\Component\Yaml\Yaml::DUMP_NUMERIC_KEY_AS_STRING
+            : 0;
+        $yaml = Yaml::dump($this->generateSpec(), 10, 2, $flags);
         return preg_replace(
             '/(?<=\n)(\s+)(?!(?:schema|properties|paths|schemas|responses|headers|examples|' .
             'requestBodies|securitySchemes|additionalProperties|items|components|info|contact|' .
