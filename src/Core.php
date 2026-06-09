@@ -438,7 +438,10 @@ class Core
             $tags = $this->docCollector->collectTags($docComment, $docStartLine, $this->currentlyAnalyzingFile);
             foreach ($tags as $tag) {
                 if ($tag['name'] === '@template') {
-                    $templates[] = $tag['value'];
+                    $parts = preg_split('/\s+/', trim($tag['value']));
+                    if (!empty($parts[0])) {
+                        $templates[] = $parts[0];
+                    }
                 }
 
                 if ($tag['name'] === '@extends' || $tag['name'] === '@implements') {
