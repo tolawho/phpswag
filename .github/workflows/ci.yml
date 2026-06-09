@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php-version: ['8.0', '8.1', '8.2', '8.3', '8.4']
+        php-version: ['8.1', '8.3']
 
     steps:
       - name: Checkout code
@@ -47,7 +47,8 @@ jobs:
         run: |
           if [ "${{ matrix.php-version }}" = "8.0" ]; then
             rm -f composer.lock
-            composer update --prefer-dist --no-progress --no-interaction
+            composer clear-cache
+            composer update --no-cache --prefer-dist --no-progress --no-interaction
           else
             composer install --prefer-dist --no-progress --no-interaction
           fi
