@@ -59,8 +59,16 @@ class GenerateCommand extends Command
             if (!empty($config['description'])) {
                 $core->setDescription($config['description']);
             }
-            if (!empty($config['host'])) {
+            if (!empty($config['servers'])) {
+                $core->setServers($config['servers']);
+            } elseif (!empty($config['host'])) {
                 $core->setServers([['url' => $config['host']]]);
+            }
+            if (!empty($config['contact']) && is_array($config['contact'])) {
+                $core->setContact($config['contact']);
+            }
+            if (!empty($config['license']) && is_array($config['license'])) {
+                $core->setLicense($config['license']);
             }
 
             // Apply Cache configuration

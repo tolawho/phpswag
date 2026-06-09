@@ -26,6 +26,9 @@ class PhpSwagExtension extends Extension
         $container->setParameter('phpswag.version', $config['version']);
         $container->setParameter('phpswag.description', $config['description']);
         $container->setParameter('phpswag.host', $config['host']);
+        $container->setParameter('phpswag.servers', $config['servers'] ?? []);
+        $container->setParameter('phpswag.contact', $config['contact'] ?? []);
+        $container->setParameter('phpswag.license', $config['license'] ?? []);
         $container->setParameter('phpswag.cache', $config['cache']);
         $container->setParameter('phpswag.cache_file', $config['cache_file']);
     }
