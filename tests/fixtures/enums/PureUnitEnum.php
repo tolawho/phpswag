@@ -1,6 +1,6 @@
 <?php
 
-namespace PhpSwag\Tests\Fixtures\Enums;
+namespace PhpSwag\Tests\fixtures\enums;
 
 enum PureUnitEnum
 {
