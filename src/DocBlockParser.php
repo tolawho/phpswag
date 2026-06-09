@@ -16,10 +16,34 @@ class DocBlockParser
 
     public function __construct()
     {
-        $this->lexer = new Lexer();
-        $constExprParser = new ConstExprParser();
-        $typeParser = new TypeParser($constExprParser);
-        $this->parser = new PhpDocParser($typeParser, $constExprParser);
+        if (class_exists('PHPStan\PhpDocParser\ParserConfig')) {
+            $configRef = new \ReflectionClass('PHPStan\PhpDocParser\ParserConfig');
+            $config = $configRef->newInstance([]);
+
+            $lexerRef = new \ReflectionClass(Lexer::class);
+            $this->lexer = $lexerRef->newInstance($config);
+
+            $constExprRef = new \ReflectionClass(ConstExprParser::class);
+            $constExprParser = $constExprRef->newInstance($config);
+
+            $typeRef = new \ReflectionClass(TypeParser::class);
+            $typeParser = $typeRef->newInstance($config, $constExprParser);
+
+            $phpDocRef = new \ReflectionClass(PhpDocParser::class);
+            $this->parser = $phpDocRef->newInstance($config, $typeParser, $constExprParser);
+        } else {
+            $lexerRef = new \ReflectionClass(Lexer::class);
+            $this->lexer = $lexerRef->newInstance();
+
+            $constExprRef = new \ReflectionClass(ConstExprParser::class);
+            $constExprParser = $constExprRef->newInstance();
+
+            $typeRef = new \ReflectionClass(TypeParser::class);
+            $typeParser = $typeRef->newInstance($constExprParser);
+
+            $phpDocRef = new \ReflectionClass(PhpDocParser::class);
+            $this->parser = $phpDocRef->newInstance($typeParser, $constExprParser);
+        }
     }
 
     public function parse(string $docBlock): PhpDocNode
