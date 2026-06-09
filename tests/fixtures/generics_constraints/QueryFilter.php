@@ -1,0 +1,1 @@
+<?php namespace App; /** @template TModel of BaseModel */ class QueryFilter { }

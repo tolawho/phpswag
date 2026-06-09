@@ -112,4 +112,52 @@ PHP;
         $this->assertStringContainsString('title: CLI Title', str_replace("'", "", $yaml));
         $this->assertStringNotContainsString('title: Doc Title', str_replace("'", "", $yaml));
     }
+
+    public function testMultipleServersDiscovery(): void
+    {
+        $code = <<<'PHP'
+<?php
+/**
+ * @title API with multiple servers
+ * @server https://api.production.com Production Server
+ * @server https://api.staging.com Staging Server
+ */
+PHP;
+        file_put_contents($this->fixtureDir . '/api.php', $code);
+
+        $core = new Core();
+        $yaml = $core->generateYaml([$this->fixtureDir]);
+
+        $yamlClean = str_replace("'", "", $yaml);
+        $this->assertStringContainsString('servers:', $yamlClean);
+        $this->assertStringContainsString('url: https://api.production.com', $yamlClean);
+        $this->assertStringContainsString('description: Production Server', $yamlClean);
+        $this->assertStringContainsString('url: https://api.staging.com', $yamlClean);
+        $this->assertStringContainsString('description: Staging Server', $yamlClean);
+    }
+
+    public function testProgrammaticMultipleServers(): void
+    {
+        $code = <<<'PHP'
+<?php
+/**
+ * @title API Title
+ */
+PHP;
+        file_put_contents($this->fixtureDir . '/api.php', $code);
+
+        $core = new Core();
+        $core->setServers([
+            ['url' => 'https://api.dev.com', 'description' => 'Development Server'],
+            ['url' => 'https://api.test.com', 'description' => 'Testing Server']
+        ]);
+        $yaml = $core->generateYaml([$this->fixtureDir]);
+
+        $yamlClean = str_replace("'", "", $yaml);
+        $this->assertStringContainsString('servers:', $yamlClean);
+        $this->assertStringContainsString('url: https://api.dev.com', $yamlClean);
+        $this->assertStringContainsString('description: Development Server', $yamlClean);
+        $this->assertStringContainsString('url: https://api.test.com', $yamlClean);
+        $this->assertStringContainsString('description: Testing Server', $yamlClean);
+    }
 }

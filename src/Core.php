@@ -53,6 +53,8 @@ class Core
     private array $globalSecurity = [];
     /** @var array<string, array{name: string, description?: string}> */
     private array $globalTags = [];
+    /** @var array<int, array<string, mixed>> */
+    private array $globalServers = [];
 
     public function __construct(
         ?Scanner $scanner = null,
@@ -336,6 +338,7 @@ class Core
         $this->securitySchemes = array_merge($this->securitySchemes, $discovered['securitySchemes']);
         $this->globalSecurity = array_merge($this->globalSecurity, $discovered['globalSecurity']);
         $this->globalTags = array_merge($this->globalTags, $discovered['globalTags']);
+        $this->globalServers = array_merge($this->globalServers, $discovered['globalServers']);
 
         $nameResolver = new NameResolver();
         $traverser = new NodeTraverser();
@@ -371,34 +374,47 @@ class Core
             $this->generator->setDescription($description);
         }
 
-        $contact = [];
-        if (isset($this->globalMetadata['@contact.name'])) {
-            $contact['name'] = $this->globalMetadata['@contact.name'];
-        }
-        if (isset($this->globalMetadata['@contact.email'])) {
-            $contact['email'] = $this->globalMetadata['@contact.email'];
-        }
-        if (isset($this->globalMetadata['@contact.url'])) {
-            $contact['url'] = $this->globalMetadata['@contact.url'];
+        $contact = $this->cliOverrides['contact'] ?? null;
+        if ($contact === null) {
+            $contact = [];
+            if (isset($this->globalMetadata['@contact.name'])) {
+                $contact['name'] = $this->globalMetadata['@contact.name'];
+            }
+            if (isset($this->globalMetadata['@contact.email'])) {
+                $contact['email'] = $this->globalMetadata['@contact.email'];
+            }
+            if (isset($this->globalMetadata['@contact.url'])) {
+                $contact['url'] = $this->globalMetadata['@contact.url'];
+            }
         }
         if (!empty($contact)) {
             $this->generator->setContact($contact);
         }
 
-        $license = [];
-        if (isset($this->globalMetadata['@license.name'])) {
-            $license['name'] = $this->globalMetadata['@license.name'];
-        }
-        if (isset($this->globalMetadata['@license.url'])) {
-            $license['url'] = $this->globalMetadata['@license.url'];
+        $license = $this->cliOverrides['license'] ?? null;
+        if ($license === null) {
+            $license = [];
+            if (isset($this->globalMetadata['@license.name'])) {
+                $license['name'] = $this->globalMetadata['@license.name'];
+            }
+            if (isset($this->globalMetadata['@license.url'])) {
+                $license['url'] = $this->globalMetadata['@license.url'];
+            }
         }
         if (!empty($license)) {
             $this->generator->setLicense($license);
         }
 
-        $host = $this->cliOverrides['host'] ?? $this->globalMetadata['@host'] ?? null;
-        if ($host) {
-            $this->generator->setServers([['url' => $host]]);
+        $servers = $this->cliOverrides['servers'] ?? null;
+        if ($servers !== null) {
+            $this->generator->setServers($servers);
+        } elseif (!empty($this->globalServers)) {
+            $this->generator->setServers($this->globalServers);
+        } else {
+            $host = $this->cliOverrides['host'] ?? $this->globalMetadata['@host'] ?? null;
+            if ($host) {
+                $this->generator->setServers([['url' => $host]]);
+            }
         }
 
         if (!empty($this->securitySchemes)) {
@@ -438,7 +454,10 @@ class Core
             $tags = $this->docCollector->collectTags($docComment, $docStartLine, $this->currentlyAnalyzingFile);
             foreach ($tags as $tag) {
                 if ($tag['name'] === '@template') {
-                    $templates[] = $tag['value'];
+                    $parts = preg_split('/\s+/', trim($tag['value']));
+                    if (!empty($parts[0])) {
+                        $templates[] = $parts[0];
+                    }
                 }
 
                 if ($tag['name'] === '@extends' || $tag['name'] === '@implements') {
@@ -977,7 +996,7 @@ class Core
      */
     public function setContact(?array $contact): void
     {
-        $this->generator->setContact($contact);
+        $this->cliOverrides['contact'] = $contact;
     }
 
     /**
@@ -985,7 +1004,7 @@ class Core
      */
     public function setLicense(?array $license): void
     {
-        $this->generator->setLicense($license);
+        $this->cliOverrides['license'] = $license;
     }
 
     /**
@@ -993,10 +1012,9 @@ class Core
      */
     public function setServers(array $servers): void
     {
+        $this->cliOverrides['servers'] = $servers;
         if (isset($servers[0]['url'])) {
             $this->cliOverrides['host'] = $servers[0]['url'];
-        } else {
-            $this->generator->setServers($servers);
         }
     }
 

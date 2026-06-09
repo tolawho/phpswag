@@ -12,7 +12,7 @@ A framework-agnostic PHP Swagger/OpenAPI generator that uses static analysis (AS
 
 - **AST-based Static Analysis**: No need to run your application.
 - **Modern PHP Support**: Handles namespaces, use aliases, and complex types.
-- **Global API Metadata Discovery**: Automatically extracts `@title`, `@version`, `@description`, `@contact.*`, `@license.*`, and `@host` from any file.
+- **Global API Metadata Discovery**: Automatically extracts `@title`, `@version`, `@description`, `@contact.*`, `@license.*`, `@host`, and `@server` from any file.
 - **Security & Authentication**: Define global security schemes (ApiKey, JWT) and apply them to endpoints or globally.
 - **Comprehensive Schema Validation**: Support for `minimum`, `maximum`, `minLength`, `maxLength`, `pattern`, `format`, and `example` directly in PHPDoc.
 - **Auto-inference**: Automatically resolve route parameters and request bodies from method signatures.
@@ -76,12 +76,15 @@ You can define your API information in a top-level PHPDoc block in any of your s
  * @license.name MIT
  * @license.url https://opensource.org/licenses/MIT
  * @host https://api.example.com
+ * @server https://api.production.com Production Server
+ * @server https://api.staging.com Staging Server
  *
  * @tag.name Auth Authentication endpoints
  * @tag.name Users User management endpoints
  */
 ```
 
+- **Multiple Servers**: You can define multiple servers using `@server [URL] [Description]`. If `@server` tags are defined, they will take precedence over `@host`.
 - **Global Tag Ordering**: Explicitly define tags using `@tag.name [name] [description]` at the global level. The generated OpenAPI spec will preserve the order and descriptions of these tags. Any other tags found on endpoints that are not declared at the global level will be sorted alphabetically and appended to the end of the list.
 
 ### Controller-level Metadata & Inheritance
@@ -404,6 +407,7 @@ When both PHPDoc and PHP 8 Attributes are present:
     - `@license.name [TEXT]`
     - `@license.url [TEXT]`
     - `@host [URL]`
+    - `@server [URL] [Description]`
 - **Security**:
     - `@securityDefinitions.apikey [NAME] [IN: header|query|cookie] [KEY_NAME]`
     - `@securityDefinitions.jwt [NAME]`
@@ -629,3 +633,30 @@ To validate the schema:
 ```bash
 php bin/console phpswag:generate --validate
 ```
+
+---
+
+## Contributing
+
+We welcome contributions from the community! If you'd like to help improve `phpswag`, please review our [Contributing Guidelines](CONTRIBUTING.md). 
+
+Please also adhere to our [Code of Conduct](CODE_OF_CONDUCT.md) to keep our community approachable and respectable.
+
+For security vulnerabilities, please refer to our [Security Policy](SECURITY.md).
+
+---
+
+## ☕ Support / Donate
+
+**⭐️ Star this repository**
+
+If you find `phpswag` useful, please consider giving it a star on GitHub! It helps the project grow and reach more developers.
+
+**☕ Buy me a coffee**
+
+This project is developed and maintained entirely for free during my spare time. If you would like to financially support its development, you can buy me a coffee through the following channels:
+
+* **PayPal:** [paypal.me/tolawho](https://paypal.me/tolawho)
+* **Ko-fi:** [ko-fi.com/tolawho](https://ko-fi.com/tolawho)
+* **Crypto (ETH/ERC20):** `0x730c98ef98c660862baedef292ae3a041a905cdd`
+* **Crypto (BTC):** `bc1qv2cp6mcjcd3m2v6hvk09qjg47tljd6mkea6dmuevhxm3a6ps38jqxtwgex`

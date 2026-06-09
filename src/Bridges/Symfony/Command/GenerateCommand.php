@@ -85,10 +85,30 @@ class GenerateCommand extends Command
                 $description = $this->parameterBag->get('phpswag.description');
                 $core->setDescription($description);
             }
-            if ($this->parameterBag->has('phpswag.host')) {
+            if ($this->parameterBag->has('phpswag.servers')) {
+                $servers = $this->parameterBag->get('phpswag.servers');
+                if (is_array($servers) && !empty($servers)) {
+                    /** @var array<int, array<string, mixed>> $servers */
+                    $core->setServers($servers);
+                }
+            } elseif ($this->parameterBag->has('phpswag.host')) {
                 /** @var string $host */
                 $host = $this->parameterBag->get('phpswag.host');
                 $core->setServers([['url' => $host]]);
+            }
+            if ($this->parameterBag->has('phpswag.contact')) {
+                $contact = $this->parameterBag->get('phpswag.contact');
+                if (is_array($contact) && !empty($contact)) {
+                    /** @var array<string, mixed> $contact */
+                    $core->setContact($contact);
+                }
+            }
+            if ($this->parameterBag->has('phpswag.license')) {
+                $license = $this->parameterBag->get('phpswag.license');
+                if (is_array($license) && !empty($license)) {
+                    /** @var array<string, mixed> $license */
+                    $core->setLicense($license);
+                }
             }
 
             // Set cache if enabled

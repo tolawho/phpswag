@@ -13,7 +13,9 @@ class GenerateCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'phpswag:generate {--validate : Run validation on the generated spec}';
+    protected $signature = 'phpswag:generate'
+        . ' {--validate : Run validation on the generated spec}'
+        . ' {--filter-unused= : Filter unused schemas (true or false)}';
 
     /**
      * The console command description.
@@ -57,8 +59,16 @@ class GenerateCommand extends Command
             if (!empty($config['description'])) {
                 $core->setDescription($config['description']);
             }
-            if (!empty($config['host'])) {
+            if (!empty($config['servers'])) {
+                $core->setServers($config['servers']);
+            } elseif (!empty($config['host'])) {
                 $core->setServers([['url' => $config['host']]]);
+            }
+            if (!empty($config['contact']) && is_array($config['contact'])) {
+                $core->setContact($config['contact']);
+            }
+            if (!empty($config['license']) && is_array($config['license'])) {
+                $core->setLicense($config['license']);
             }
 
             // Apply Cache configuration
@@ -66,6 +76,15 @@ class GenerateCommand extends Command
                 $cacheFile = $config['cache_file'] ?? storage_path('framework/cache/phpswag-cache');
                 $core->enableCache($cacheFile);
             }
+
+            // Apply filter-unused configuration
+            $filterUnusedOption = $this->option('filter-unused');
+            if ($filterUnusedOption === null || $filterUnusedOption === '') {
+                $filterUnused = (bool)($config['filter_unused'] ?? true);
+            } else {
+                $filterUnused = filter_var($filterUnusedOption, FILTER_VALIDATE_BOOLEAN);
+            }
+            $core->setFilterUnusedSchemas($filterUnused);
 
             // Perform validation if flag is set
             if ($this->option('validate')) {
