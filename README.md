@@ -1,5 +1,11 @@
 # PHP Swagger Generator
 
+[![CI Status](https://github.com/tolawho/phpswag/actions/workflows/ci.yml/badge.svg)](https://github.com/tolawho/phpswag/actions/workflows/ci.yml)
+[![Codecov Coverage](https://codecov.io/gh/tolawho/phpswag/branch/main/graph/badge.svg)](https://codecov.io/gh/tolawho/phpswag)
+[![PHP Version](https://img.shields.io/badge/php-%3E%3D%208.0-blue.svg)](https://packagist.org/packages/phpswag/phpswag)
+[![PHPStan Level 7](https://img.shields.io/badge/PHPStan-level%207-brightgreen.svg)](https://github.com/phpstan/phpstan)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A framework-agnostic PHP Swagger/OpenAPI generator that uses static analysis (AST) and PHPDoc. This library scans your source code and generates OpenAPI 3.0 or 3.1 specifications automatically.
 
 ## Features
