@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<ruleset name="PhpSwag Coding Standard">
+    <description>The coding standard for PhpSwag.</description>
+
+    <!-- Use PSR12 as the base standard -->
+    <rule ref="PSR12"/>
+
+    <!-- Ignore line length limits in test files as they contain long inline fixture strings -->
+    <rule ref="Generic.Files.LineLength">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+
+    <!-- Paths to check -->
+    <file>src</file>
+    <file>tests</file>
+
+    <!-- Exclude fixtures from tests -->
+    <exclude-pattern>tests/fixtures/*</exclude-pattern>
+    <!-- Exclude vendor directory -->
+    <exclude-pattern>vendor/*</exclude-pattern>
+
+    <!-- Additional config -->
+    <arg name="colors"/>
+    <arg value="p"/>
+</ruleset>

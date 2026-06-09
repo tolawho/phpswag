@@ -1,0 +1,10 @@
+paths:
+  - examples
+openapi_version: 3.0.0
+format: yaml
+output: swagger.yaml
+filter_unused: true
+cache: true
+watch_host: localhost
+watch_port: 8888
+cache_file: ./.phpswag-cache

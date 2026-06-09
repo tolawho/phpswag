@@ -1,0 +1,1 @@
+<?php namespace App; /** @template T */ class ApiResponse { /** @var T */ public $data; }

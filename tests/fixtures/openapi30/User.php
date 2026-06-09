@@ -1,0 +1,1 @@
+<?php namespace App; class User { /** @var ?string */ public $email; }
