@@ -25,7 +25,7 @@
   - Xử lý được tham chiếu vòng (Circular References).
 
 ### [Epic 3] Tích hợp CLI và Tối ưu hóa Hiệu năng
-- **Trạng thái:** In Progress
+- **Trạng thái:** Done
 - **Chủ sở hữu:** Fullstack Developer (User)
 - **Tóm tắt:** Hoàn thiện công cụ dưới dạng CLI, hỗ trợ nhiều định dạng xuất bản và cơ chế bộ nhớ đệm (Caching).
 - **Giả thuyết Lợi ích (Benefit Hypothesis):** Biến thư viện thành một công cụ dòng lệnh chuyên nghiệp dễ dàng tích hợp vào quy trình CI/CD, đồng thời đảm bảo tốc độ xử lý nhanh cho các dự án lớn.
@@ -36,7 +36,7 @@
   - Có tài liệu hướng dẫn sử dụng (README) hoàn chỉnh cho cộng đồng.
 
 ### [Epic 4] Professional API Documentation & Advanced Controls
-- **Trạng thái:** To Do
+- **Trạng thái:** Done
 - **Chủ sở hữu:** Fullstack Developer (User)
 - **Tóm tắt:** Mở rộng các tính năng lấy cảm hứng từ swaggo để hoàn thiện tài liệu API chuyên nghiệp.
 - **Giả thuyết Lợi ích (Benefit Hypothesis):** Giúp tạo ra tài liệu OpenAPI đầy đủ thông tin nhất, hỗ trợ bảo mật, validation và các tùy chỉnh nâng cao, giúp frontend và các bên liên quan dễ dàng tích hợp.
@@ -107,7 +107,7 @@
 - [x] **[S4.5.3] x- Extension Support:** Hỗ trợ trích xuất và xuất các extension OpenAPI tùy chỉnh bắt đầu bằng "x-".
 
 ### [Epic 5] Developer Experience & Modern PHP Support
-- **Trạng thái:** To Do
+- **Trạng thái:** Done
 - **Chủ sở hữu:** Fullstack Developer (User)
 - **Tóm tắt:** Tập trung vào việc tối ưu hóa quy trình viết code, tận dụng các tính năng hiện đại của PHP (Enums, Attributes-like inference) và cung cấp thông báo lỗi minh bạch.
 - **Giả thuyết Lợi ích (Benefit Hypothesis):** Giảm thiểu mã lặp lại, tận dụng tối đa sức mạnh của ngôn ngữ PHP hiện đại và giúp lập trình viên phát hiện lỗi cấu hình API ngay lập tức, từ đó tăng tốc độ phát triển.
@@ -151,3 +151,87 @@
 - [x] **[S5.5.1] Built-in Date/Time Mapping:** Map `DateTimeInterface` sang `string/date-time`.
 - [x] **[S5.5.2] External Library Support (Optional):** Hỗ trợ mapping cho Uuid (Ramsey/Symfony) nếu class tồn tại.
 - [x] **[S5.5.3] Binary/File Mapping:** Map các class UploadedFile phổ biến sang `string/binary`.
+
+### [Epic 6] Hỗ trợ PHP 8+ Attributes (Attributes-based Annotation)
+- **Trạng thái:** Done
+- **Chủ sở hữu:** Fullstack Developer (User)
+- **Tóm tắt:** Bổ sung cơ chế khai báo metadata sử dụng PHP 8 Attributes song hành cùng PHPDoc.
+- **Giả thuyết Lợi ích (Benefit Hypothesis):** Giúp lập trình viên viết code chuẩn PHP hiện đại, tận dụng tính năng tự động gợi ý (autocomplete) của IDE, phát hiện sớm lỗi chính tả và loại bỏ sự phụ thuộc quá lớn vào việc phân tích chuỗi text trong DocBlock.
+- **Tiêu chí chấp nhận (Acceptance Criteria):**
+  - Định nghĩa đầy đủ các class Attributes tương đương với các PHPDoc tags hiện tại.
+  - Bộ phân tích AST thu thập chính xác Attributes từ Class, Method, Property và Method Parameters.
+  - Thực hiện đúng chiến lược gộp thông minh (Smart Merge) khi khai báo song song.
+  - Toàn bộ unit tests viết cho Attributes và cơ chế gộp đều pass.
+
+## 2. Program Backlog (Features) (Tiếp theo)
+
+### Features cho [Epic 6] PHP 8+ Attributes Support
+- [x] **[F6.1] Attribute Definitions:** Định nghĩa các class Attribute tương ứng trong `src/Attributes/`.
+- [x] **[F6.2] AST Attribute Extraction:** Trích xuất các Attribute từ Node AST thông qua PHP-Parser.
+- [x] **[F6.3] Smart Merge Engine:** Engine gộp dữ liệu từ PHPDoc và Attributes theo thứ tự ưu tiên.
+
+## 3. Team Backlog (User Stories) (Tiếp theo)
+
+### Stories cho [F6.1] Attribute Definitions
+- [x] **[S6.1.1] Core Routing Attributes:** Định nghĩa `#[Route]`, `#[Tag]`, `#[OperationId]`, `#[Deprecated]`.
+- [x] **[S6.1.2] Parameter Attributes:** Định nghĩa `#[QueryParam]`, `#[PathParam]`, `#[HeaderParam]`, `#[CookieParam]`, `#[RequestBody]`.
+- [x] **[S6.1.3] Response & Schema Attributes:** Định nghĩa `#[Response]`, `#[Property]`, `#[Schema]`.
+
+
+### Stories cho [F6.2] AST Attribute Extraction
+- [x] **[S6.2.1] Class & Property Attribute Parser:** Quét và phân tích Attribute ở cấp Class (Controller/Model) và Class Property.
+- [x] **[S6.2.2] Method & Parameter Attribute Parser:** Quét và phân tích Attribute ở cấp Method và Parameter của Method.
+
+### Stories cho [F6.3] Smart Merge Engine
+- [x] **[S6.3.1] Override Engine for Single Values:** Ghi đè các trường đơn (summary, description, v.v.).
+- [x] **[S6.3.2] Merge Engine for Collections:** Gộp các tag, security schemes.
+- [x] **[S6.3.3] Keyed Collection Override:** Ghi đè các phần tử trùng lặp (trùng mã code 200, trùng tên tham số).
+
+### [Epic 7] Tạo các Framework Bridge (Laravel & Symfony Integration)
+- **Trạng thái:** Done
+- **Chủ sở hữu:** Fullstack Developer (User)
+- **Tóm tắt:** Xây dựng cầu nối tích hợp với Laravel và Symfony giúp lập trình viên chạy phpswag mượt mà trên framework của họ.
+- **Giả thuyết Lợi ích (Benefit Hypothesis):** Giúp giảm thiểu cấu hình thủ công cho dự án dùng Laravel/Symfony, tự động đăng ký route xem tài liệu (Swagger UI) và lệnh command line tích hợp.
+- **Tiêu chí chấp nhận (Acceptance Criteria):**
+  - Laravel Bridge hỗ trợ Artisan command, config file và Route UI render `/api/docs`.
+  - Symfony Bridge hỗ trợ Console command và Bundle DI.
+
+### [Epic 8] Tích hợp Linter & OpenAPI Validator
+- **Trạng thái:** Done
+- **Chủ sở hữu:** Fullstack Developer (User)
+- **Tóm tắt:** Bổ sung cơ chế validate đặc tả OpenAPI sinh ra để phát hiện sớm các lỗi cấu trúc nghiêm trọng.
+- **Giả thuyết Lợi ích (Benefit Hypothesis):** Đảm bảo spec sinh ra luôn đúng chuẩn OpenAPI 3.0/3.1 trước khi xuất bản hoặc tích hợp vào hệ thống khác.
+- **Tiêu chí chấp nhận (Acceptance Criteria):**
+  - Có cờ `--validate` tích hợp vào lệnh `generate`.
+  - Phát hiện lỗi logic (trùng route path, tham chiếu vòng sai cách, thiếu info bắt buộc) và hiển thị thông tin lỗi chi tiết.
+
+## 2. Program Backlog (Features) (Tiếp theo)
+
+### Features cho [Epic 7] Framework Bridges
+- [x] **[F7.1] Laravel Integration:** Tích hợp ServiceProvider, config, Artisan command và route Swagger UI.
+- [x] **[F7.2] Symfony Bundle:** Tích hợp Bundle, console command và DI container setup.
+
+### Features cho [Epic 8] Linter & Validator
+- [x] **[F8.1] Native Structural Validator:** Tự kiểm tra các lỗi logic cấu trúc spec trong quá trình tạo.
+- [x] **[F8.2] CLI Linter Integration:** Thêm cờ `--validate` trong CLI để validate đặc tả OpenAPI.
+
+## 3. Team Backlog (User Stories) (Tiếp theo)
+
+### Stories cho [F7.1] Laravel Integration
+- [x] **[S7.1.1] Service Provider & Config:** Tạo `PhpSwagServiceProvider` và file cấu hình mẫu `phpswag.php`.
+- [x] **[S7.1.2] Artisan Commands:** Đăng ký các command `phpswag:generate` và `phpswag:watch`.
+- [x] **[S7.1.3] Swagger UI Controller:** Đăng ký route và render giao diện Swagger UI HTML trực tiếp.
+
+### Stories cho [F7.2] Symfony Bundle
+- [x] **[S7.2.1] Symfony Bundle Setup:** Tạo class `PhpSwagBundle` và cấu hình DI extension.
+- [x] **[S7.2.2] Symfony Console Command:** Tạo command tương đương `phpswag:generate` trong Symfony Console.
+
+### Stories cho [F8.1] Native Structural Validator
+- [x] **[S8.1.1] Spec Integrity Check:** Kiểm tra tính toàn vẹn của YAML/JSON sinh ra (thiếu title, trùng endpoint).
+- [x] **[S8.1.2] Class Reference Verification:** Kiểm tra xem các class DTO/Resource được dùng làm ref có thực sự tồn tại trong registry hay không.
+
+### Stories cho [F8.2] CLI Linter Integration
+- [x] **[S8.2.1] Validate CLI Flag:** Cài đặt cờ `--validate` trong Console Command của phpswag.
+- [x] **[S8.2.2] Diagnostic Output:** Định dạng và hiển thị kết quả kiểm lỗi rõ ràng cho lập trình viên.
+
+

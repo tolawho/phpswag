@@ -13,6 +13,7 @@ use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\NodeTraverser;
 use PhpSwag\IR\RouteDefinition;
 use PhpSwag\IR\SchemaDefinition;
+use PhpSwag\Attributes\AttributeParser;
 
 class Core
 {
@@ -25,6 +26,7 @@ class Core
     private ?Cache\CacheInterface $cache = null;
     private TypeAnalyzer $typeAnalyzer;
     private Metadata\GlobalMetadataDiscoverer $metadataDiscoverer;
+    private AttributeParser $attributeParser;
 
     /** @var array<string, TagParser\TagParserInterface> */
     private array $tagParsers = [];
@@ -70,6 +72,7 @@ class Core
         $this->generator = $generator ?? new Generator($this->schemaRegistry);
         $this->typeAnalyzer = $typeAnalyzer ?? new TypeAnalyzer();
         $this->metadataDiscoverer = $metadataDiscoverer ?? new Metadata\GlobalMetadataDiscoverer($this->docCollector);
+        $this->attributeParser = new AttributeParser();
 
         $this->registerTagParser(new TagParser\RouteTagParser());
         $this->registerTagParser(new TagParser\ResponseTagParser($this->typeAnalyzer, $this->docCollector));
@@ -157,6 +160,16 @@ class Core
     {
         $this->analyze($paths);
         return $this->generator->generateJson();
+    }
+
+    /**
+     * @param array<int, string> $paths
+     * @return array<string, mixed>
+     */
+    public function generateSpecArray(array $paths): array
+    {
+        $this->analyze($paths);
+        return $this->generator->getSpecArray();
     }
 
     /**
@@ -505,7 +518,28 @@ class Core
 
         $docComment = $stmt->getDocComment()?->getText() ?? '';
         $docStartLine = $stmt->getDocComment()?->getStartLine();
-        $tags = $this->docCollector->collectTags($docComment, $docStartLine, $this->currentlyAnalyzingFile);
+        $phpDocTags = $this->docCollector->collectTags($docComment, $docStartLine, $this->currentlyAnalyzingFile);
+
+        $attrs = $this->attributeParser->parse($stmt->attrGroups, $nameResolver, $this->currentlyAnalyzingFile);
+        foreach ($attrs as $attr) {
+            if ($attr['class'] === 'PhpSwag\Attributes\Tag') {
+                $tagName = $attr['arguments']['name'] ?? '';
+                $tagDesc = $attr['arguments']['description'] ?? null;
+                if ($tagName !== '') {
+                    $tagData = ['name' => $tagName];
+                    if ($tagDesc !== null && $tagDesc !== '') {
+                        $tagData['description'] = $tagDesc;
+                    }
+                    $hasTag = isset($this->globalTags[$tagName]);
+                    $hasDesc = isset($tagData['description']);
+                    $hasExistingDesc = isset($this->globalTags[$tagName]['description']);
+                    if (!$hasTag || ($hasDesc && !$hasExistingDesc)) {
+                        $this->globalTags[$tagName] = $tagData;
+                    }
+                }
+            }
+        }
+        $tags = $this->mergeTagsAndAttributes($phpDocTags, $attrs);
 
         $context = new TagParser\SchemaContext($schema, $nameResolver);
 
@@ -529,9 +563,34 @@ class Core
         // Third pass: property definitions from class member variables
         foreach ($stmt->stmts as $member) {
             if ($member instanceof Property) {
-                $propDoc = $member->getDocComment()?->getText() ?? '';
-                $propStartLine = $member->getDocComment()?->getStartLine();
-                $propTags = $this->docCollector->collectTags($propDoc, $propStartLine, $this->currentlyAnalyzingFile);
+                 $propDoc = $member->getDocComment()?->getText() ?? '';
+                 $propStartLine = $member->getDocComment()?->getStartLine();
+                 $propPhpDocTags = $this->docCollector->collectTags(
+                     $propDoc,
+                     $propStartLine,
+                     $this->currentlyAnalyzingFile
+                 );
+
+                 $propAttrs = $this->attributeParser->parse(
+                     $member->attrGroups,
+                     $nameResolver,
+                     $this->currentlyAnalyzingFile
+                 );
+
+                $propName = $member->props[0]->name->toString();
+                foreach ($propAttrs as &$pAttr) {
+                    if ($pAttr['class'] === Attributes\Property::class) {
+                        if (!isset($pAttr['arguments']['name'])) {
+                            $pAttr['arguments']['name'] = $propName;
+                        }
+                        if (!isset($pAttr['arguments']['type']) && $member->type !== null) {
+                            $pAttr['arguments']['type'] = $this->resolveTypeHint($member->type, $nameResolver);
+                        }
+                    }
+                }
+                unset($pAttr);
+
+                $propTags = $this->mergeTagsAndAttributes($propPhpDocTags, $propAttrs);
 
                 $explicitRequired = null;
                 foreach ($propTags as $t) {
@@ -542,14 +601,17 @@ class Core
                 }
 
                 foreach ($propTags as $pTag) {
-                    if ($pTag['name'] === '@var') {
-                        $pTag['explicitRequired'] = $explicitRequired;
+                    if ($pTag['name'] === '@var' || $pTag['name'] === '@property') {
+                        $pTag['explicitRequired'] = $explicitRequired ?? $pTag['explicitRequired'] ?? null;
                         $pTag['hasDefault'] = ($member->props[0]->default !== null);
                         $pTag['typeHint'] = $member->type;
-                        $pTag['propertyName'] = $member->props[0]->name->toString();
+                        if (empty($pTag['propertyName'])) {
+                            $pTag['propertyName'] = $propName;
+                        }
 
-                        if (isset($this->schemaTagParsers['@var'])) {
-                            $this->schemaTagParsers['@var']->parse($pTag, $context, $typeResolver);
+                        $parserName = isset($this->schemaTagParsers[$pTag['name']]) ? $pTag['name'] : '@var';
+                        if (isset($this->schemaTagParsers[$parserName])) {
+                            $this->schemaTagParsers[$parserName]->parse($pTag, $context, $typeResolver);
                         }
                     }
                 }
@@ -559,6 +621,7 @@ class Core
                 $this->analyzeMethod(
                     $member,
                     $typeResolver,
+                    $nameResolver,
                     $context->classTags,
                     $context->classSecurity,
                     $context->classAccept,
@@ -579,6 +642,7 @@ class Core
     private function analyzeMethod(
         ClassMethod $member,
         TypeResolver $typeResolver,
+        NameResolver $nameResolver,
         array $classTags = [],
         array $classSecurity = [],
         ?string $classAccept = null,
@@ -586,7 +650,89 @@ class Core
     ): void {
         $methodDoc = $member->getDocComment()?->getText() ?? '';
         $methodStartLine = $member->getDocComment()?->getStartLine();
-        $tags = $this->docCollector->collectTags($methodDoc, $methodStartLine, $this->currentlyAnalyzingFile);
+        $methodPhpDocTags = $this->docCollector->collectTags(
+            $methodDoc,
+            $methodStartLine,
+            $this->currentlyAnalyzingFile
+        );
+
+        $methodAttrs = $this->attributeParser->parse(
+            $member->attrGroups,
+            $nameResolver,
+            $this->currentlyAnalyzingFile
+        );
+
+        foreach ($methodAttrs as $attr) {
+            if ($attr['class'] === 'PhpSwag\Attributes\Tag') {
+                $tagName = $attr['arguments']['name'] ?? '';
+                $tagDesc = $attr['arguments']['description'] ?? null;
+                if ($tagName !== '') {
+                    $tagData = ['name' => $tagName];
+                    if ($tagDesc !== null && $tagDesc !== '') {
+                        $tagData['description'] = $tagDesc;
+                    }
+                    $hasTag = isset($this->globalTags[$tagName]);
+                    $hasDesc = isset($tagData['description']);
+                    $hasExistingDesc = isset($this->globalTags[$tagName]['description']);
+                    if (!$hasTag || ($hasDesc && !$hasExistingDesc)) {
+                        $this->globalTags[$tagName] = $tagData;
+                    }
+                }
+            }
+        }
+
+        foreach ($member->params as $param) {
+            if (!$param->var instanceof Node\Expr\Variable || !is_string($param->var->name)) {
+                continue;
+            }
+            $paramName = $param->var->name;
+            $paramAttrs = $this->attributeParser->parse(
+                $param->attrGroups,
+                $nameResolver,
+                $this->currentlyAnalyzingFile
+            );
+
+            $type = $this->resolveTypeHint($param->type, $nameResolver);
+
+            foreach ($paramAttrs as &$pAttr) {
+                if (
+                    in_array($pAttr['class'], [
+                    Attributes\QueryParam::class,
+                    Attributes\PathParam::class,
+                    Attributes\HeaderParam::class,
+                    Attributes\CookieParam::class
+                    ])
+                ) {
+                    if (!isset($pAttr['arguments']['name'])) {
+                        $pAttr['arguments']['name'] = $paramName;
+                    }
+                }
+                if ($pAttr['class'] === Attributes\RequestBody::class) {
+                    if (!isset($pAttr['arguments']['type'])) {
+                        $pAttr['arguments']['type'] = $type;
+                    }
+                }
+                if (
+                    in_array($pAttr['class'], [
+                    Attributes\QueryParam::class,
+                    Attributes\PathParam::class,
+                    Attributes\HeaderParam::class,
+                    Attributes\CookieParam::class
+                    ])
+                ) {
+                    if (!isset($pAttr['arguments']['type'])) {
+                        $pAttr['arguments']['type'] = $type;
+                    }
+                }
+            }
+            unset($pAttr);
+
+            foreach ($paramAttrs as $pAttr) {
+                $methodAttrs[] = $pAttr;
+            }
+        }
+
+        $tags = $this->mergeTagsAndAttributes($methodPhpDocTags, $methodAttrs);
 
         $context = new TagParser\RouteContext($classTags);
 
@@ -633,6 +779,15 @@ class Core
                 }
                 $paramName = $param->var->name;
 
+                $paramAttrs = $this->attributeParser->parse(
+                    $param->attrGroups,
+                    $nameResolver,
+                    $this->currentlyAnalyzingFile
+                );
+                if (!empty($paramAttrs)) {
+                    continue;
+                }
+
                 // Skip if already defined by explicit tags
                 $exists = false;
                 foreach ($context->parameters as $p) {
@@ -645,17 +800,7 @@ class Core
                     continue;
                 }
 
-                $type = 'mixed';
-                if ($param->type instanceof Node\Identifier) {
-                    $type = $param->type->toString();
-                } elseif ($param->type instanceof Node\Name) {
-                    $resolved = $param->type->getAttribute('resolvedName');
-                    if ($resolved) {
-                        $type = '\\' . $resolved->toString();
-                    } else {
-                        $type = $param->type->toString();
-                    }
-                }
+                $type = $this->resolveTypeHint($param->type, $nameResolver);
 
                 $schema = $typeResolver->resolve(
                     $this->docCollector->parseType($type),
@@ -708,6 +853,108 @@ class Core
         }
     }
 
+    /**
+     * Merges PHPDoc tags and parsed PHP 8 Attributes applying the smart merge strategy.
+     *
+     * @param array<int, array<string, mixed>> $phpDocTags
+     * @param array<int, array{class: string, arguments: array<string, mixed>, line: int, file: string}> $attrs
+     * @return array<int, array<string, mixed>>
+     */
+    private function mergeTagsAndAttributes(array $phpDocTags, array $attrs): array
+    {
+        $attributeMapper = new Attributes\AttributeMapper($this->docCollector);
+        $attrTags = [];
+        foreach ($attrs as $attr) {
+            $mapped = $attributeMapper->map($attr);
+            foreach ($mapped as $t) {
+                $attrTags[] = $t;
+            }
+        }
+
+        if (empty($attrTags)) {
+            return $phpDocTags;
+        }
+
+        $overriddenSingleValues = [];
+        $overriddenResponses = [];
+        $overriddenParameters = [];
+        $overriddenProperties = [];
+        $hasAttrRequestBody = false;
+
+        foreach ($attrTags as $tag) {
+            $name = $tag['name'];
+
+            if (in_array($name, ['@summary', '@description', '@operationId', '@deprecated', '@title'])) {
+                $overriddenSingleValues[$name] = true;
+            }
+
+            if (in_array($name, ['@response', '@success', '@failure'])) {
+                if (preg_match('/^(default|\d+)/i', $tag['value'], $matches)) {
+                    $overriddenResponses[strtolower($matches[1])] = true;
+                }
+            }
+
+            if (in_array($name, ['@query', '@path', '@header', '@cookie'])) {
+                if (!empty($tag['propertyName'])) {
+                    $overriddenParameters[$tag['propertyName']] = true;
+                }
+            }
+
+            if (in_array($name, ['@property', '@var'])) {
+                if (!empty($tag['propertyName'])) {
+                    $overriddenProperties[$tag['propertyName']] = true;
+                }
+            }
+
+            if ($name === '@body') {
+                $hasAttrRequestBody = true;
+            }
+        }
+
+        $filteredPhpDocTags = array_filter($phpDocTags, function ($tag) use (
+            $overriddenSingleValues,
+            $overriddenResponses,
+            $overriddenParameters,
+            $overriddenProperties,
+            $hasAttrRequestBody
+        ) {
+            $name = $tag['name'];
+
+            if (isset($overriddenSingleValues[$name])) {
+                return false;
+            }
+
+            if (in_array($name, ['@response', '@success', '@failure'])) {
+                if (preg_match('/^(default|\d+)/i', $tag['value'], $matches)) {
+                    $code = strtolower($matches[1]);
+                    if (isset($overriddenResponses[$code])) {
+                        return false;
+                    }
+                }
+            }
+
+            if (in_array($name, ['@query', '@path', '@header', '@cookie'])) {
+                if (!empty($tag['propertyName']) && isset($overriddenParameters[$tag['propertyName']])) {
+                    return false;
+                }
+            }
+
+            if (in_array($name, ['@property', '@var'])) {
+                if (!empty($tag['propertyName']) && isset($overriddenProperties[$tag['propertyName']])) {
+                    return false;
+                }
+            }
+
+            if ($name === '@body' && $hasAttrRequestBody) {
+                return false;
+            }
+
+            return true;
+        });
+
+        return array_merge(array_values($filteredPhpDocTags), $attrTags);
+    }
+
     public function setTitle(string $title): void
     {
         $this->cliOverrides['title'] = $title;
@@ -749,6 +996,47 @@ class Core
         } else {
             $this->generator->setServers($servers);
         }
+    }
+
+    private function resolveTypeHint(?Node $typeNode, NameResolver $nameResolver): string
+    {
+        if ($typeNode === null) {
+            return 'mixed';
+        }
+        if ($typeNode instanceof Node\Identifier) {
+            return $typeNode->toString();
+        }
+        if ($typeNode instanceof Node\Name) {
+            $resolved = $typeNode->getAttribute('resolvedName');
+            if ($resolved instanceof Node\Name) {
+                return '\\' . $resolved->toString();
+            }
+            return $typeNode->toString();
+        }
+        if ($typeNode instanceof Node\NullableType) {
+            return $this->resolveTypeHint($typeNode->type, $nameResolver);
+        }
+        if ($typeNode instanceof Node\UnionType) {
+            $types = [];
+            foreach ($typeNode->types as $subType) {
+                $resolvedSub = $this->resolveTypeHint($subType, $nameResolver);
+                if ($resolvedSub !== 'null') {
+                    $types[] = $resolvedSub;
+                }
+            }
+            if (empty($types)) {
+                return 'mixed';
+            }
+            return implode('|', $types);
+        }
+        if ($typeNode instanceof Node\IntersectionType) {
+            $types = [];
+            foreach ($typeNode->types as $subType) {
+                $types[] = $this->resolveTypeHint($subType, $nameResolver);
+            }
+            return implode('&', $types);
+        }
+        return 'mixed';
     }
 
     public function setCache(Cache\CacheInterface $cache): void

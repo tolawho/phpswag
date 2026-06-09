@@ -22,9 +22,15 @@
         "symfony/yaml": "^6.0"
     },
     "require-dev": {
+        "illuminate/console": "^10.0",
+        "illuminate/routing": "^10.0",
+        "illuminate/support": "^10.0",
         "phpstan/phpstan": "^2.2",
         "phpunit/phpunit": "^10.0",
-        "squizlabs/php_codesniffer": "^4.0"
+        "squizlabs/php_codesniffer": "^4.0",
+        "symfony/config": "^6.0",
+        "symfony/dependency-injection": "^6.0",
+        "symfony/http-kernel": "^6.0"
     },
     "config": {
         "sort-packages": true

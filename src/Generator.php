@@ -121,6 +121,14 @@ class Generator
         return $this->routes;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    public function getSpecArray(): array
+    {
+        return $this->generateSpec();
+    }
+
     public function generateYaml(): string
     {
         $yaml = Yaml::dump($this->generateSpec(), 10, 2, Yaml::DUMP_NUMERIC_KEY_AS_STRING);

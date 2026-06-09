@@ -39,7 +39,8 @@ class GenerateCommand extends Command
             ->addOption('description', null, InputOption::VALUE_REQUIRED, 'API Description')
             ->addOption('host', null, InputOption::VALUE_REQUIRED, 'API Host/Server URL')
             ->addOption('cache', null, InputOption::VALUE_NONE, 'Enable caching to speed up generation')
-            ->addOption('cache-file', null, InputOption::VALUE_REQUIRED, 'Cache file path', './.phpswag-cache');
+            ->addOption('cache-file', null, InputOption::VALUE_REQUIRED, 'Cache file path', './.phpswag-cache')
+            ->addOption('validate', null, InputOption::VALUE_NONE, 'Validate the generated OpenAPI specification');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -115,6 +116,21 @@ class GenerateCommand extends Command
             }
             if ($host = $input->getOption('host')) {
                 $core->setServers([['url' => $host]]);
+            }
+
+            // Validate if requested
+            if ($input->getOption('validate')) {
+                $specArray = $core->generateSpecArray($paths);
+                $validator = new \PhpSwag\Validation\Validator();
+                $errors = $validator->validate($specArray);
+                if (!empty($errors)) {
+                    $output->writeln('<error> ❌ OpenAPI Validation Failed: </error>');
+                    foreach ($errors as $error) {
+                        $output->writeln(sprintf('<error> - %s </error>', $error));
+                    }
+                    return Command::FAILURE;
+                }
+                $output->writeln('<info> ✅ OpenAPI Validation Passed! </info>');
             }
 
             // Format
