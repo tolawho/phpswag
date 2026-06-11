@@ -82,5 +82,6 @@ class TypeMappingRegistry
             'type' => 'string',
             'format' => 'binary',
         ];
+        $this->mappings['Illuminate\Http\Request'] = []; // Ignore Request objects
     }
 }
