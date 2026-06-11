@@ -79,39 +79,6 @@ class RouteParamsTest extends TestCase
         $this->assertStringContainsString("\$ref: '#/components/schemas/App_Controllers_CreateUserRequest'", $yaml);
     }
 
-    public function testAutoInference()
-    {
-        $code = '<?php
-        namespace App\Controllers;
-        /** @property string $name */
-        class UserDTO {}
-
-        class UserController {
-            /**
-             * @route PUT /users/{id}
-             */
-            public function update(int $id, UserDTO $data, string $reason) {}
-        }';
-
-        $filePath = __DIR__ . "/fixtures/AutoInferenceController.php";
-        if (!is_dir(dirname($filePath))) {
-            mkdir(dirname($filePath), 0777, true);
-        }
-        file_put_contents($filePath, $code);
-
-        $core = new Core();
-        $yaml = $core->generate([dirname($filePath)]);
-        unlink($filePath);
-
-        // id should be in path
-        $this->assertMatchesRegularExpression("/name: id\s+in: path/s", $yaml);
-        // reason should be in query
-        $this->assertMatchesRegularExpression("/name: reason\s+in: query/s", $yaml);
-        // data should be requestBody
-        $this->assertStringContainsString("requestBody:", $yaml);
-        $this->assertStringContainsString("\$ref: '#/components/schemas/App_Controllers_UserDTO'", $yaml);
-    }
-
     public function testEnumAndDefaultAttributes()
     {
          $code = '<?php

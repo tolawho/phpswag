@@ -13,7 +13,6 @@ use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\NodeTraverser;
 use PhpSwag\IR\RouteDefinition;
 use PhpSwag\IR\SchemaDefinition;
-use PhpSwag\Attributes\AttributeParser;
 
 class Core
 {
@@ -26,7 +25,6 @@ class Core
     private ?Cache\CacheInterface $cache = null;
     private TypeAnalyzer $typeAnalyzer;
     private Metadata\GlobalMetadataDiscoverer $metadataDiscoverer;
-    private AttributeParser $attributeParser;
 
     /** @var array<string, TagParser\TagParserInterface> */
     private array $tagParsers = [];
@@ -74,7 +72,6 @@ class Core
         $this->generator = $generator ?? new Generator($this->schemaRegistry);
         $this->typeAnalyzer = $typeAnalyzer ?? new TypeAnalyzer();
         $this->metadataDiscoverer = $metadataDiscoverer ?? new Metadata\GlobalMetadataDiscoverer($this->docCollector);
-        $this->attributeParser = new AttributeParser();
 
         $this->registerTagParser(new TagParser\RouteTagParser());
         $this->registerTagParser(new TagParser\ResponseTagParser($this->typeAnalyzer, $this->docCollector));
@@ -498,37 +495,6 @@ class Core
     private function analyzeClass(string $fqcn, Class_|Trait_|Enum_|Interface_ $stmt, NameResolver $nameResolver): void
     {
         $schema = $this->schemaRegistry->get($fqcn);
-        // @phpstan-ignore-next-line
-        if (PHP_VERSION_ID >= 80100 && function_exists('enum_exists') && enum_exists($fqcn)) {
-            $reflection = new \ReflectionEnum($fqcn);
-            $isBacked = $reflection->isBacked();
-            $cases = $reflection->getCases();
-            $enumType = 'string';
-            $enumValues = [];
-
-            if ($isBacked) {
-                /** @var \ReflectionNamedType $backingType */
-                $backingType = $reflection->getBackingType();
-                $backingTypeName = $backingType->getName();
-                $enumType = $backingTypeName === 'int' ? 'integer' : 'string';
-                foreach ($cases as $case) {
-                    if ($case instanceof \ReflectionEnumBackedCase) {
-                        $enumValues[] = $case->getBackingValue();
-                    }
-                }
-            } else {
-                $enumType = 'string';
-                foreach ($cases as $case) {
-                    $enumValues[] = $case->getName();
-                }
-            }
-
-            if ($schema !== null) {
-                $schema->enum = $enumValues;
-                $schema->enumType = $enumType;
-            }
-            return;
-        }
 
         $typeResolver = new TypeResolver(
             $this->schemaRegistry,
@@ -541,26 +507,7 @@ class Core
         $docStartLine = $stmt->getDocComment()?->getStartLine();
         $phpDocTags = $this->docCollector->collectTags($docComment, $docStartLine, $this->currentlyAnalyzingFile);
 
-        $attrs = $this->attributeParser->parse($stmt->attrGroups, $nameResolver, $this->currentlyAnalyzingFile);
-        foreach ($attrs as $attr) {
-            if ($attr['class'] === 'PhpSwag\Attributes\Tag') {
-                $tagName = $attr['arguments']['name'] ?? '';
-                $tagDesc = $attr['arguments']['description'] ?? null;
-                if ($tagName !== '') {
-                    $tagData = ['name' => $tagName];
-                    if ($tagDesc !== null && $tagDesc !== '') {
-                        $tagData['description'] = $tagDesc;
-                    }
-                    $hasTag = isset($this->globalTags[$tagName]);
-                    $hasDesc = isset($tagData['description']);
-                    $hasExistingDesc = isset($this->globalTags[$tagName]['description']);
-                    if (!$hasTag || ($hasDesc && !$hasExistingDesc)) {
-                        $this->globalTags[$tagName] = $tagData;
-                    }
-                }
-            }
-        }
-        $tags = $this->mergeTagsAndAttributes($phpDocTags, $attrs);
+        $tags = $phpDocTags;
 
         $context = new TagParser\SchemaContext($schema, $nameResolver);
 
@@ -592,26 +539,8 @@ class Core
                      $this->currentlyAnalyzingFile
                  );
 
-                 $propAttrs = $this->attributeParser->parse(
-                     $member->attrGroups,
-                     $nameResolver,
-                     $this->currentlyAnalyzingFile
-                 );
-
                 $propName = $member->props[0]->name->toString();
-                foreach ($propAttrs as &$pAttr) {
-                    if ($pAttr['class'] === Attributes\Property::class) {
-                        if (!isset($pAttr['arguments']['name'])) {
-                            $pAttr['arguments']['name'] = $propName;
-                        }
-                        if (!isset($pAttr['arguments']['type']) && $member->type !== null) {
-                            $pAttr['arguments']['type'] = $this->resolveTypeHint($member->type, $nameResolver);
-                        }
-                    }
-                }
-                unset($pAttr);
-
-                $propTags = $this->mergeTagsAndAttributes($propPhpDocTags, $propAttrs);
+                $propTags = $propPhpDocTags;
 
                 $explicitRequired = null;
                 foreach ($propTags as $t) {
@@ -624,8 +553,8 @@ class Core
                 foreach ($propTags as $pTag) {
                     if ($pTag['name'] === '@var' || $pTag['name'] === '@property') {
                         $pTag['explicitRequired'] = $explicitRequired ?? $pTag['explicitRequired'] ?? null;
-                        $pTag['hasDefault'] = ($member->props[0]->default !== null);
-                        $pTag['typeHint'] = $member->type;
+                        $pTag['hasDefault'] = false;
+                        $pTag['typeHint'] = null;
                         if (empty($pTag['propertyName'])) {
                             $pTag['propertyName'] = $propName;
                         }
@@ -677,83 +606,7 @@ class Core
             $this->currentlyAnalyzingFile
         );
 
-        $methodAttrs = $this->attributeParser->parse(
-            $member->attrGroups,
-            $nameResolver,
-            $this->currentlyAnalyzingFile
-        );
-
-        foreach ($methodAttrs as $attr) {
-            if ($attr['class'] === 'PhpSwag\Attributes\Tag') {
-                $tagName = $attr['arguments']['name'] ?? '';
-                $tagDesc = $attr['arguments']['description'] ?? null;
-                if ($tagName !== '') {
-                    $tagData = ['name' => $tagName];
-                    if ($tagDesc !== null && $tagDesc !== '') {
-                        $tagData['description'] = $tagDesc;
-                    }
-                    $hasTag = isset($this->globalTags[$tagName]);
-                    $hasDesc = isset($tagData['description']);
-                    $hasExistingDesc = isset($this->globalTags[$tagName]['description']);
-                    if (!$hasTag || ($hasDesc && !$hasExistingDesc)) {
-                        $this->globalTags[$tagName] = $tagData;
-                    }
-                }
-            }
-        }
-
-        foreach ($member->params as $param) {
-            if (!$param->var instanceof Node\Expr\Variable || !is_string($param->var->name)) {
-                continue;
-            }
-            $paramName = $param->var->name;
-            $paramAttrs = $this->attributeParser->parse(
-                $param->attrGroups,
-                $nameResolver,
-                $this->currentlyAnalyzingFile
-            );
-
-            $type = $this->resolveTypeHint($param->type, $nameResolver);
-
-            foreach ($paramAttrs as &$pAttr) {
-                if (
-                    in_array($pAttr['class'], [
-                    Attributes\QueryParam::class,
-                    Attributes\PathParam::class,
-                    Attributes\HeaderParam::class,
-                    Attributes\CookieParam::class
-                    ])
-                ) {
-                    if (!isset($pAttr['arguments']['name'])) {
-                        $pAttr['arguments']['name'] = $paramName;
-                    }
-                }
-                if ($pAttr['class'] === Attributes\RequestBody::class) {
-                    if (!isset($pAttr['arguments']['type'])) {
-                        $pAttr['arguments']['type'] = $type;
-                    }
-                }
-                if (
-                    in_array($pAttr['class'], [
-                    Attributes\QueryParam::class,
-                    Attributes\PathParam::class,
-                    Attributes\HeaderParam::class,
-                    Attributes\CookieParam::class
-                    ])
-                ) {
-                    if (!isset($pAttr['arguments']['type'])) {
-                        $pAttr['arguments']['type'] = $type;
-                    }
-                }
-            }
-            unset($pAttr);
-
-            foreach ($paramAttrs as $pAttr) {
-                $methodAttrs[] = $pAttr;
-            }
-        }
-
-        $tags = $this->mergeTagsAndAttributes($methodPhpDocTags, $methodAttrs);
+        $tags = $methodPhpDocTags;
 
         $context = new TagParser\RouteContext($classTags);
 
@@ -793,65 +646,6 @@ class Core
             $routeParts = explode(' ', $context->routeTag);
             $path = $routeParts[1];
 
-            // Auto-inference from method parameters
-            foreach ($member->params as $param) {
-                if (!$param->var instanceof Node\Expr\Variable || !is_string($param->var->name)) {
-                    continue;
-                }
-                $paramName = $param->var->name;
-
-                $paramAttrs = $this->attributeParser->parse(
-                    $param->attrGroups,
-                    $nameResolver,
-                    $this->currentlyAnalyzingFile
-                );
-                if (!empty($paramAttrs)) {
-                    continue;
-                }
-
-                // Skip if already defined by explicit tags
-                $exists = false;
-                foreach ($context->parameters as $p) {
-                    if ($p['name'] === $paramName) {
-                        $exists = true;
-                        break;
-                    }
-                }
-                if ($exists) {
-                    continue;
-                }
-
-                $type = $this->resolveTypeHint($param->type, $nameResolver);
-
-                $schema = $typeResolver->resolve(
-                    $this->docCollector->parseType($type),
-                    $param->getStartLine(),
-                    $this->currentlyAnalyzingFile
-                );
-
-                // If it's a class and not primitive, infer as requestBody if not already set
-                $isPrimitive = in_array(ltrim($type, '\\'), ['int', 'string', 'bool', 'float', 'array', 'mixed']);
-
-                if (!$isPrimitive && $context->requestBody === null) {
-                    $context->requestBody = [
-                        'schema' => $schema,
-                        'description' => 'Auto-inferred from method parameter $' . $paramName
-                    ];
-                } else {
-                    $in = 'query';
-                    if (strpos($path, '{' . $paramName . '}') !== false) {
-                        $in = 'path';
-                    }
-
-                    $context->parameters[] = [
-                        'name' => $paramName,
-                        'in' => $in,
-                        'schema' => $schema,
-                        'description' => 'Auto-inferred from method parameter'
-                    ];
-                }
-            }
-
             $this->generator->addRoute(new RouteDefinition(
                 method: $routeParts[0],
                 path: $path,
@@ -874,107 +668,6 @@ class Core
         }
     }
 
-    /**
-     * Merges PHPDoc tags and parsed PHP 8 Attributes applying the smart merge strategy.
-     *
-     * @param array<int, array<string, mixed>> $phpDocTags
-     * @param array<int, array{class: string, arguments: array<string, mixed>, line: int, file: string}> $attrs
-     * @return array<int, array<string, mixed>>
-     */
-    private function mergeTagsAndAttributes(array $phpDocTags, array $attrs): array
-    {
-        $attributeMapper = new Attributes\AttributeMapper($this->docCollector);
-        $attrTags = [];
-        foreach ($attrs as $attr) {
-            $mapped = $attributeMapper->map($attr);
-            foreach ($mapped as $t) {
-                $attrTags[] = $t;
-            }
-        }
-
-        if (empty($attrTags)) {
-            return $phpDocTags;
-        }
-
-        $overriddenSingleValues = [];
-        $overriddenResponses = [];
-        $overriddenParameters = [];
-        $overriddenProperties = [];
-        $hasAttrRequestBody = false;
-
-        foreach ($attrTags as $tag) {
-            $name = $tag['name'];
-
-            if (in_array($name, ['@summary', '@description', '@operationId', '@deprecated', '@title'])) {
-                $overriddenSingleValues[$name] = true;
-            }
-
-            if (in_array($name, ['@response', '@success', '@failure'])) {
-                if (preg_match('/^(default|\d+)/i', $tag['value'], $matches)) {
-                    $overriddenResponses[strtolower($matches[1])] = true;
-                }
-            }
-
-            if (in_array($name, ['@query', '@path', '@header', '@cookie'])) {
-                if (!empty($tag['propertyName'])) {
-                    $overriddenParameters[$tag['propertyName']] = true;
-                }
-            }
-
-            if (in_array($name, ['@property', '@var'])) {
-                if (!empty($tag['propertyName'])) {
-                    $overriddenProperties[$tag['propertyName']] = true;
-                }
-            }
-
-            if ($name === '@body') {
-                $hasAttrRequestBody = true;
-            }
-        }
-
-        $filteredPhpDocTags = array_filter($phpDocTags, function ($tag) use (
-            $overriddenSingleValues,
-            $overriddenResponses,
-            $overriddenParameters,
-            $overriddenProperties,
-            $hasAttrRequestBody
-        ) {
-            $name = $tag['name'];
-
-            if (isset($overriddenSingleValues[$name])) {
-                return false;
-            }
-
-            if (in_array($name, ['@response', '@success', '@failure'])) {
-                if (preg_match('/^(default|\d+)/i', $tag['value'], $matches)) {
-                    $code = strtolower($matches[1]);
-                    if (isset($overriddenResponses[$code])) {
-                        return false;
-                    }
-                }
-            }
-
-            if (in_array($name, ['@query', '@path', '@header', '@cookie'])) {
-                if (!empty($tag['propertyName']) && isset($overriddenParameters[$tag['propertyName']])) {
-                    return false;
-                }
-            }
-
-            if (in_array($name, ['@property', '@var'])) {
-                if (!empty($tag['propertyName']) && isset($overriddenProperties[$tag['propertyName']])) {
-                    return false;
-                }
-            }
-
-            if ($name === '@body' && $hasAttrRequestBody) {
-                return false;
-            }
-
-            return true;
-        });
-
-        return array_merge(array_values($filteredPhpDocTags), $attrTags);
-    }
 
     public function setTitle(string $title): void
     {
@@ -1016,47 +709,6 @@ class Core
         if (isset($servers[0]['url'])) {
             $this->cliOverrides['host'] = $servers[0]['url'];
         }
-    }
-
-    private function resolveTypeHint(?Node $typeNode, NameResolver $nameResolver): string
-    {
-        if ($typeNode === null) {
-            return 'mixed';
-        }
-        if ($typeNode instanceof Node\Identifier) {
-            return $typeNode->toString();
-        }
-        if ($typeNode instanceof Node\Name) {
-            $resolved = $typeNode->getAttribute('resolvedName');
-            if ($resolved instanceof Node\Name) {
-                return '\\' . $resolved->toString();
-            }
-            return $typeNode->toString();
-        }
-        if ($typeNode instanceof Node\NullableType) {
-            return $this->resolveTypeHint($typeNode->type, $nameResolver);
-        }
-        if ($typeNode instanceof Node\UnionType) {
-            $types = [];
-            foreach ($typeNode->types as $subType) {
-                $resolvedSub = $this->resolveTypeHint($subType, $nameResolver);
-                if ($resolvedSub !== 'null') {
-                    $types[] = $resolvedSub;
-                }
-            }
-            if (empty($types)) {
-                return 'mixed';
-            }
-            return implode('|', $types);
-        }
-        if ($typeNode instanceof Node\IntersectionType) {
-            $types = [];
-            foreach ($typeNode->types as $subType) {
-                $types[] = $this->resolveTypeHint($subType, $nameResolver);
-            }
-            return implode('&', $types);
-        }
-        return 'mixed';
     }
 
     public function setCache(Cache\CacheInterface $cache): void

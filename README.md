@@ -6,9 +6,7 @@
 [![PHPStan Level 7](https://img.shields.io/badge/PHPStan-level%207-brightgreen.svg)](https://github.com/phpstan/phpstan)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> **PHP OpenAPI/Swagger generator using AST, PHPDoc and PHP 8 Attributes**
-
-A framework-agnostic **PHP Swagger generator** that uses static analysis (AST) and PHPDoc. This **AST-based API documentation** library scans your source code and serves as a powerful **OpenAPI 3.1 generator** (as well as 3.0). It also features seamless **Laravel/Symfony integration** out-of-the-box.
+A framework-agnostic PHP Swagger/OpenAPI generator that uses static analysis (AST) and PHPDoc. This library scans your source code and generates OpenAPI 3.0 or 3.1 specifications automatically.
 
 ## Features
 
